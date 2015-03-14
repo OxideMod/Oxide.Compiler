@@ -1,0 +1,71 @@
+version: "{build}"
+
+# 'Unstable' OS is for Cygwin
+os: unstable
+
+# Skip select commits
+skip_commits:
+  message: /\[ci skip\]/
+
+# Set global variables
+environment:
+  global:
+    BASH: C:\cygwin\bin\bash
+    CYGPATH: C:\cygwin\bin\cygpath
+    GITHUB_TOKEN:
+      secure: jIA8Wrdhv1QwQRpcY7tJpyyLY3tzB2bRHBbYgefXuR1a7awTj1wYA2cspjpIKzte
+
+before_build:
+  # Download and install the required version of Mono
+  - ps: Start-FileDownload "http://download.mono-project.com/archive/3.12.1/windows-installer/mono-3.12.1-gtksharp-2.12.26-win32-0.msi" -FileName "mono.msi"
+  - ps: Start-FileDownload "https://github.com/activescott/lessmsi/releases/download/v1.2.0/lessmsi-v1.2.0.zip" -FileName "lessmsi.zip"
+  - 7z e lessmsi.zip > NUL
+  - lessmsi x mono.msi
+  # Set environmental variables and add to PATH
+  - SET MONO_WIN=%APPVEYOR_BUILD_FOLDER%\mono\SourceDir\Mono
+  - for /f "delims=" %%a in ('%%CYGPATH%% %%MONO_WIN%%') do @set MONO=%%a
+  - SET PKG_CONFIG_PATH=%MONO%/lib/pkgconfig
+  - SET MACHINECONFIG=%MONO_WIN%\etc\mono\4.5\machine.config
+  - SET PATH=%PATH%;%MONO%\bin
+  # Create icon.rc file and compile icon to object file
+  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; echo 1 ICON icon.ico > icon.rc; windres icon.rc icon.o"'
+
+build_script:
+  # Create temp files from source file and dependencies
+  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle basic.exe -c -o temp.c -oo temp.o --deps --machine-config \"$MACHINECONFIG\""'
+  # Create final file from temp files
+  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-pc-mingw32-gcc -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o icon.o"'
+
+on_success:
+  # Download and unpack UPX for compression
+  - ps: Start-FileDownload "http://upx.sourceforge.net/download/upx391w.zip" -FileName "upxw.zip"
+  - 7z e upxw.zip > NUL
+  # Compress using UPX and compression level 9
+  - upx.exe -q -9 CSharpCompiler.exe
+  # If from master branch and not a pull request, deploy to Snapshots repo on GitHub
+  - ps: >-
+      if ($env:APPVEYOR_PULL_REQUEST_NUMBER -ne $null) {
+        echo "Skipping deployment for pull request!"
+      } elseif ($env:APPVEYOR_REPO_BRANCH -ne 'master') {
+        echo "Skipping deployment for non-master branch!"
+      } else {
+        git config --global user.email "appveyor@appveyor.com"
+        git config --global user.name "AppVeyor"
+        git clone -q https://$env:GITHUB_TOKEN@github.com/OxideMod/Snapshots.git snapshots
+        cp -force CSharpCompiler.exe snapshots
+        cd snapshots
+        git add .
+        git commit -m "CSharpCompiler for Windows build $env:APPVEYOR_BUILD_NUMBER"
+        git push -qf origin master
+      }
+
+notifications:
+  # Disable build status email notifications
+  - provider: Email
+    on_build_success: false
+    on_build_failure: false
+    on_build_status_changed: false
+
+# Disable scanning for tests and deployment
+test: off
+deploy: off

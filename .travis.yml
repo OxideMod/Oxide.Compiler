@@ -1,0 +1,25 @@
+language: csharp
+
+before_script:
+  # Install UPX for compression
+  - sudo apt-get -y install upx-ucl
+
+script:
+  # Create temp files from source file and dependencies
+  - mkbundle basic.exe -c -o temp.c -oo temp.o --deps
+  # Create final file from temp files
+  - gcc -g -o CSharpCompiler -Wall temp.c `pkg-config --cflags --libs mono-2` temp.o
+
+after_success:
+  # Compress using UPX and compression level 9
+  - upx -9 CSharpCompiler
+
+notifications:
+  # Disable build status email notifications, until the issue with forks is fixed
+  email: false
+  # Slack (oxidemod.slack.com)
+  slack:
+    rooms:
+      secure: "PLAlvwl3x5F5o3rWV4OUw0eSQj6eP/e1UnG5b664ggE5SQJnbFfuWbRU7fpCNPD2ooNYobZNB22Q/XBOxJd8W9OjIx1oPkpG+L5hKk6MgPhxT9SlK5yE8IYXOuqeoXnOxk+6Zmbxfq2Z5o+FNm7ELIemQGYMfwiJ5wwRis9wiXs="
+  # IRC notification
+  irc: "chat.freenode.net#oxidemod"
