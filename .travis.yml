@@ -21,5 +21,3 @@ notifications:
   slack:
     rooms:
       secure: "PLAlvwl3x5F5o3rWV4OUw0eSQj6eP/e1UnG5b664ggE5SQJnbFfuWbRU7fpCNPD2ooNYobZNB22Q/XBOxJd8W9OjIx1oPkpG+L5hKk6MgPhxT9SlK5yE8IYXOuqeoXnOxk+6Zmbxfq2Z5o+FNm7ELIemQGYMfwiJ5wwRis9wiXs="
-  # IRC notification
-  irc: "chat.freenode.net#oxidemod"
