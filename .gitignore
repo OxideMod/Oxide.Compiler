@@ -1,0 +1,5 @@
+*.sln.ide
+*.suo
+.vs/
+bin/
+obj/

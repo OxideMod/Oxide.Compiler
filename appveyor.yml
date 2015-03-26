@@ -31,8 +31,10 @@ before_build:
   - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; echo 1 ICON icon.ico > icon.rc; windres icon.rc icon.o"'
 
 build_script:
+  # Build the wrapper
+  - msbuild Wrapper.sln /p:Configuration=Release
   # Create temp files from source file and dependencies
-  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle basic.exe -c -o temp.c -oo temp.o --deps --machine-config \"$MACHINECONFIG\""'
+  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle Wrapper/bin/Release/Wrapper.exe basic.exe -c -o temp.c -oo temp.o --deps --machine-config \"$MACHINECONFIG\""'
   # Create final file from temp files
   - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-pc-mingw32-gcc -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o icon.o"'
 

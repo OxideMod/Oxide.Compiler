@@ -1,12 +1,14 @@
 language: csharp
 
 before_script:
+  # Build the wrapper
+  - xbuild Wrapper.sln /p:Configuration=Release
   # Install UPX for compression
   - sudo apt-get -y install upx-ucl
 
 script:
   # Create temp files from source file and dependencies
-  - mkbundle basic.exe -c -o temp.c -oo temp.o --deps
+  - mkbundle Wrapper/bin/Release/Wrapper.exe basic.exe -c -o temp.c -oo temp.o --deps
   # Create final file from temp files
   - gcc -g -o CSharpCompiler -Wall temp.c `pkg-config --cflags --libs mono-2` temp.o
 
