@@ -57,7 +57,7 @@ on_success:
         cp -force CSharpCompiler.exe snapshots
         cd snapshots
         git add .
-        git commit -m "CSharpCompiler for Windows build $env:APPVEYOR_BUILD_NUMBER"
+        git commit -m ("CSharpCompiler Windows build $env:APPVEYOR_BUILD_NUMBER from https://github.com/$env:APPVEYOR_REPO_NAME/commit/" + $env:APPVEYOR_REPO_COMMIT.Substring(0,7))
         git push -qf origin master
       }
 
