@@ -13,6 +13,10 @@ namespace Oxide.Wrapper
     {
         static int Main(string[] args)
         {
+            for (var i = 0; i < args.Length; i++)
+            {
+                args[i] = Encoding.UTF8.GetString(Encoding.Unicode.GetBytes(args[i])).TrimEnd();
+            }
             var result = 0;
             var outString = new StringBuilder();
             var error = new StringWriter();

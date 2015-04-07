@@ -35,6 +35,7 @@ build_script:
   - msbuild Wrapper.sln /p:Configuration=Release
   # Create temp files from source file and dependencies
   - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle Wrapper/bin/Release/Wrapper.exe basic.exe -c -o temp.c -oo temp.o --deps --machine-config \"$MACHINECONFIG\""'
+  - ps: (Get-Content temp.c -Raw) | Foreach-Object {$_ -replace "int main(.|\n)*", (Get-Content win.c -Raw)} | Set-Content temp.c
   # Create final file from temp files
   - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-pc-mingw32-gcc -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o icon.o"'
 
