@@ -27,8 +27,6 @@ before_build:
   - SET PKG_CONFIG_PATH=%MONO%/lib/pkgconfig
   - SET MACHINECONFIG=%MONO_WIN%\etc\mono\4.5\machine.config
   - SET PATH=%PATH%;%MONO%\bin
-  # Create icon.rc file and compile icon to object file
-  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; echo 1 ICON icon.ico > icon.rc; windres icon.rc icon.o"'
 
 build_script:
   # Build the wrapper
@@ -39,7 +37,7 @@ build_script:
   - ps: (Get-Content resource.rc -Raw) | Foreach-Object {$_ -replace "(?<version>1[,|\.]0[,|\.]0[,|\.])0", "`${version}$env:APPVEYOR_BUILD_NUMBER"} | Set-Content resource.rc
   - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; windres -i resource.rc -o resource.o"'
   # Create final file from temp files
-  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-pc-mingw32-gcc -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o resource.o icon.o"'
+  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-pc-mingw32-gcc -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o resource.o"'
 
 on_success:
   # Download and unpack UPX for compression
