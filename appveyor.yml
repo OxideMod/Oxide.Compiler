@@ -29,10 +29,8 @@ before_build:
   - SET PATH=%PATH%;%MONO%\bin
 
 build_script:
-  # Build the wrapper
-  - msbuild Wrapper.sln /p:Configuration=Release
   # Create temp files from source file and dependencies
-  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle Wrapper/bin/Release/Wrapper.exe basic.exe -c -o temp.c -oo temp.o --deps --machine-config \"$MACHINECONFIG\""'
+  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle basic.exe -c -o temp.c -oo temp.o --deps --machine-config \"$MACHINECONFIG\""'
   - ps: (Get-Content temp.c -Raw) | Foreach-Object {$_ -replace "int main(.|\n)*", (Get-Content win.c -Raw)} | Set-Content temp.c
   - ps: (Get-Content resource.rc -Raw) | Foreach-Object {$_ -replace "(?<version>1[,|\.]0[,|\.]0[,|\.])0", "`${version}$env:APPVEYOR_BUILD_NUMBER"} | Set-Content resource.rc
   - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; windres -i resource.rc -o resource.o"'
