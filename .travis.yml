@@ -1,8 +1,14 @@
+# Use new Travis-CI infrastructure
+sudo: false
+
+# Source language
 language: csharp
 
-before_script:
-  # Install UPX for compression
-  - sudo apt-get -y install upx-ucl
+addons:
+  apt:
+    packages:
+    # Install UPX for compression
+    - upx-ucl
 
 script:
   # Create temp files from source file and dependencies
