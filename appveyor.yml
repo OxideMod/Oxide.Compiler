@@ -1,49 +1,46 @@
 version: "{build}"
 
-# 'Unstable' OS is for Cygwin
-os: unstable
-
-# Skip select commits
-skip_commits:
-  message: /\[ci skip\]/
-
 # Set global variables
 environment:
   global:
-    BASH: C:\cygwin\bin\bash
-    CYGPATH: C:\cygwin\bin\cygpath
+    CYG_BASH: C:\cygwin\bin\bash
+    CYG_PATH: C:\cygwin\bin\cygpath
     GITHUB_TOKEN:
       secure: jIA8Wrdhv1QwQRpcY7tJpyyLY3tzB2bRHBbYgefXuR1a7awTj1wYA2cspjpIKzte
 
+# Do a shallow clone of the repo to speed up build
+clone_depth: 1
+
+# Install needed build dependencies
 before_build:
   # Download and install the required version of Mono
-  - ps: Start-FileDownload "http://download.mono-project.com/archive/3.12.1/windows-installer/mono-3.12.1-gtksharp-2.12.26-win32-0.msi" -FileName "mono.msi"
-  - ps: Start-FileDownload "https://github.com/activescott/lessmsi/releases/download/v1.2.0/lessmsi-v1.2.0.zip" -FileName "lessmsi.zip"
+  - ps: Start-FileDownload "http://download.mono-project.com/archive/4.0.3/windows-installer/mono-4.0.3-gtksharp-2.12.26-win32-0.msi" -FileName "mono.msi"
+  - ps: Start-FileDownload "https://github.com/activescott/lessmsi/releases/download/v1.3/lessmsi-v1.3.zip" -FileName "lessmsi.zip"
   - 7z e lessmsi.zip > NUL
   - lessmsi x mono.msi
   # Set environmental variables and add to PATH
   - SET MONO_WIN=%APPVEYOR_BUILD_FOLDER%\mono\SourceDir\Mono
-  - for /f "delims=" %%a in ('%%CYGPATH%% %%MONO_WIN%%') do @set MONO=%%a
+  - for /f "delims=" %%a in ('%%CYG_PATH%% %%MONO_WIN%%') do @set MONO=%%a
   - SET PKG_CONFIG_PATH=%MONO%/lib/pkgconfig
   - SET MACHINECONFIG=%MONO_WIN%\etc\mono\4.5\machine.config
   - SET PATH=%PATH%;%MONO%\bin
 
 build_script:
   # Create temp files from source file and dependencies
-  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle basic.exe -c -o temp.c -oo temp.o --deps --machine-config \"$MACHINECONFIG\""'
+  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle basic.exe -c -o temp.c -oo temp.o --deps --machine-config \"$MACHINECONFIG\""'
   - ps: (Get-Content temp.c -Raw) | Foreach-Object {$_ -replace "int main(.|\n)*", (Get-Content win.c -Raw)} | Set-Content temp.c
   - ps: (Get-Content resource.rc -Raw) | Foreach-Object {$_ -replace "(?<version>1[,|\.]0[,|\.]0[,|\.])0", "`${version}$env:APPVEYOR_BUILD_NUMBER"} | Set-Content resource.rc
-  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; windres -i resource.rc -o resource.o"'
+  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; windres -i resource.rc -o resource.o"'
   # Create final file from temp files
-  - '%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-pc-mingw32-gcc -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o resource.o"'
+  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-pc-mingw32-gcc -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o resource.o"'
 
 on_success:
   # Download and unpack UPX for compression
   - ps: Start-FileDownload "http://upx.sourceforge.net/download/upx391w.zip" -FileName "upxw.zip"
   - 7z e upxw.zip -aoa > NUL
   # Compress using UPX and compression level 9
-  - upx.exe -q -9 CSharpCompiler.exe
-  # If from master branch and not a pull request, deploy to Snapshots repo on GitHub
+  - upx.exe -q -9 CSharpCompiler.exe %MONO_WIN%/bin/monosgen-2.0.dll
+  # If from master branch and not a pull request, deploy to Oxide repo on GitHub
   - ps: >-
       if ($env:APPVEYOR_PULL_REQUEST_NUMBER -ne $null) {
         echo "Skipping deployment for pull request!"
@@ -52,9 +49,10 @@ on_success:
       } else {
         git config --global user.email "appveyor@appveyor.com"
         git config --global user.name "AppVeyor"
-        git clone -q https://$env:GITHUB_TOKEN@github.com/OxideMod/Snapshots.git snapshots
-        cp -force CSharpCompiler.exe snapshots
-        cd snapshots
+        git clone -q https://$env:GITHUB_TOKEN@github.com/OxideMod/Oxide.git Oxide
+        cp -force CSharpCompiler.exe Oxide\Oxide.Ext.CSharp\Dependencies
+        cp -force $env:MONO_WIN\bin\monosgen-2.0.dll Oxide\Oxide.Ext.CSharp\Dependencies
+        cd Oxide
         git add .
         git commit -m ("CSharpCompiler Windows build $env:APPVEYOR_BUILD_NUMBER from https://github.com/$env:APPVEYOR_REPO_NAME/commit/" + $env:APPVEYOR_REPO_COMMIT.Substring(0,7))
         git push -qf origin master
