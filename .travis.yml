@@ -3,6 +3,7 @@ sudo: false
 
 # Source language
 language: csharp
+mono: beta
 
 addons:
   apt:
@@ -14,11 +15,13 @@ script:
   # Create temp files from source file and dependencies
   - mkbundle basic.exe -c -o temp.c -oo temp.o --deps
   # Create final file from temp files
-  - gcc -g -o CSharpCompiler -Wall temp.c `pkg-config --cflags --libs mono-2` temp.o
+  - gcc -g -o CSharpCompiler -Wall temp.c `pkg-config --cflags --libs monosgen-2` temp.o
 
 after_success:
   # Compress using UPX and compression level 9
-  - upx -9 CSharpCompiler
+  - upx -q -9 CSharpCompiler /usr/lib/libmonosgen-2.0.so.1
+  # Run deployment script
+  - "[[ $TRAVIS_PULL_REQUEST == false ]] && [[ $TRAVIS_REPO_SLUG == OxideMod/CSharpCompiler ]] && [[ $TRAVIS_BRANCH == master ]] && ./deploy.sh"
 
 notifications:
   # Disable build status email notifications, until the issue with forks is fixed
@@ -27,3 +30,9 @@ notifications:
   slack:
     rooms:
       secure: "PLAlvwl3x5F5o3rWV4OUw0eSQj6eP/e1UnG5b664ggE5SQJnbFfuWbRU7fpCNPD2ooNYobZNB22Q/XBOxJd8W9OjIx1oPkpG+L5hKk6MgPhxT9SlK5yE8IYXOuqeoXnOxk+6Zmbxfq2Z5o+FNm7ELIemQGYMfwiJ5wwRis9wiXs="
+
+env:
+  global:
+    - PKG_CONFIG_PATH=/usr/lib/pkgconfig
+    # Super secure, encrypted variables! Ssssh!
+    - secure: "o1DCUfMbn7W5HPLkrDOL1XtI3sVjFcVFjXyHUS9+uCU6gjrGWfNwU/Jk/NTLK2IpdYLrj0E9eoatlrcY3WLuLpgFL4g2VwnZVnRwuBE8jNzic8b+b+YrAltoZoaaxe7rzjGYL3GZ6UsplHSH5ZHR7odDhgwhG9pB4oEcRiPHWwc="
