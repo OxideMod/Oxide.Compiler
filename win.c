@@ -13,6 +13,8 @@ int main (int argc, char* argv[])
 	char **newargs;
 	int i, k = 0;
 	SetEnvironmentVariable("MONO_EXTERNAL_ENCODINGS", "UTF-16");
+	SetEnvironmentVariable("MONO_LOG_MASK", "");
+	SetEnvironmentVariable("MONO_LOG_LEVEL", "");
 
 #ifdef _WIN32
 	/* CommandLineToArgvW() might return a different argc than the
