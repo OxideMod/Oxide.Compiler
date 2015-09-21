@@ -18,7 +18,7 @@ git clone -q --depth 1 $GIT_REPO $HOME/Oxide >/dev/null || die_with "Failed to c
 
 echo "Copying files to Oxide directory"
 cp -f CSharpCompiler $HOME/Oxide/Oxide.Ext.CSharp/Dependencies/Linux/CSharpCompiler
-cp -f libmonosgen-2.0.so.1 $HOME/Oxide/Oxide.Ext.CSharp/Dependencies/Linux/libmonosgen-2.0.so.1
+cp -f libmono-2.0.so.1 $HOME/Oxide/Oxide.Ext.CSharp/Dependencies/Linux/libmono-2.0.so.1
 
 echo "Adding and committing"
 cd $HOME/Oxide || die_with "Failed to change to Oxide directory!"

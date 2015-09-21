@@ -1,27 +1,24 @@
+# Use new Travis-CI infrastructure
+sudo: false
+
 # Source language
 language: csharp
-#mono: beta
+mono: beta
 
 addons:
   apt:
     packages:
     # Install UPX for compression
     - upx-ucl
-    # Install libmonosgen shared library for Mono
-    #- libmonosgen-2.0-dev
-
-install:
-  # Install latest libmonosgen shared library for Mono
-  - sudo apt-get update -qq && sudo apt-get install -qq libmonosgen-2.0-dev
 
 script:
   # Create temp files from source file and dependencies
-  - mkbundle basic.exe -c -o temp.c -oo temp.o --deps
+  - mkbundle Resources/basic.exe -c -o temp.c -oo temp.o --deps
   # Create final file from temp files
-  - gcc -g -o CSharpCompiler -Wall temp.c `pkg-config --cflags --libs monosgen-2` temp.o
+  - gcc -g -o CSharpCompiler -Wall temp.c `pkg-config --cflags --libs mono-2` temp.o
 
 after_success:
-  # Copy libmonosgen shared library to project directory
+  # Copy libmono shared library to project directory
   - cp /usr/lib/libmono-2.0.so.1.0.0 libmono-2.0.so.1 && chmod +x libmono-2.0.so.1
   # Compress using UPX and compression level 9
   - upx -q -9 CSharpCompiler libmono-2.0.so.1
