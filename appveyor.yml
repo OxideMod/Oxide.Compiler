@@ -67,7 +67,7 @@ notifications:
   # Slack (oxidemod.slack.com)
   - provider: Slack
     auth_token:
-      secure: L6KY8l4ol35wQF+749Kzs4gZcLIn5FcXLV59MhJGQB8=
+      secure: ovO33N9fONSaYavRURafM85w6dEgOdNFwtzc4rASuUNh4MNn96ktsevPcCpQQLN/
     channel: updates
 
 # Disable scanning for tests and deployment
