@@ -22,9 +22,9 @@ script:
 
 after_success:
   # Copy libmonosgen shared library to project directory
-  - cp /usr/lib/libmonosgen-2.0.so.1.0.0 libmonosgen-2.0.so.1 && chmod +x libmonosgen-2.0.so.1
+  - cp /usr/lib/libmono-2.0.so.1.0.0 libmono-2.0.so.1 && chmod +x libmono-2.0.so.1
   # Compress using UPX and compression level 9
-  - upx -q -9 CSharpCompiler libmonosgen-2.0.so.1
+  - upx -q -9 CSharpCompiler libmono-2.0.so.1
   # Run deployment script
   - "[[ $TRAVIS_PULL_REQUEST == false ]] && [[ $TRAVIS_REPO_SLUG == OxideMod/CSharpCompiler ]] && [[ $TRAVIS_BRANCH == master ]] && ./deploy.sh"
 
