@@ -32,7 +32,7 @@ build_script:
   - ps: (Get-Content Resources\resource.rc -Raw) | Foreach-Object {$_ -replace "(?<version>1[,|\.]0[,|\.]0[,|\.])0", "`${version}$env:APPVEYOR_BUILD_NUMBER"} | Set-Content resource.rc
   - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; windres -i Resources/resource.rc -o resource.o"'
   # Create final file from temp files
-  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-pc-mingw32-gcc -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o Resources/resource.o"'
+  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-pc-mingw32-gcc -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o resource.o"'
 
 on_success:
   # Download and unpack UPX for compression
