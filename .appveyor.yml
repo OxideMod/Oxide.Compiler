@@ -29,7 +29,7 @@ build_script:
   # Create temp files from source file and dependencies
   - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle Resources/basic.exe -c -o temp.c -oo temp.o --deps --machine-config \"$MACHINECONFIG\""'
   - ps: (Get-Content temp.c -Raw) | Foreach-Object {$_ -replace "int main(.|\n)*", (Get-Content Resources\win.c -Raw)} | Set-Content temp.c
-  - ps: (Get-Content Resources\resource.rc -Raw) | Foreach-Object {$_ -replace "(?<version>1[,|\.]0[,|\.]0[,|\.])0", "`${version}$env:APPVEYOR_BUILD_NUMBER"} | Set-Content resource.rc
+  - ps: (Get-Content Resources\resource.rc -Raw) | Foreach-Object {$_ -replace "(?<version>\d[,|\.]\d[,|\.]\d[,|\.])\d", "`${version}$env:APPVEYOR_BUILD_NUMBER" } | Set-Content Resources\resource.rc
   - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; windres -i Resources/resource.rc -o resource.o"'
   # Create final file from temp files
   - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-pc-mingw32-gcc -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o resource.o"'

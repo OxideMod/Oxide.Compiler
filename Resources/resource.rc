@@ -18,11 +18,11 @@ BEGIN
     BEGIN
         BLOCK "040904E4"
         BEGIN
-            VALUE "CompanyName",        ""
+            VALUE "CompanyName",        "Oxide"
             VALUE "FileDescription",    ""
             VALUE "FileVersion",        "1.0.0.0"
             VALUE "InternalName",       "CSharpCompiler"
-            VALUE "LegalCopyright",     "Copyright ©  2015"
+            VALUE "LegalCopyright",     "Copyright (c) 2015 Oxide"
             VALUE "OriginalFilename",   "CSharpCompiler.exe"
             VALUE "ProductName",        "CSharpCompiler"
             VALUE "ProductVersion",     "1.0.0.0"
