@@ -17,9 +17,9 @@ git config --global user.name "Travis" || die_with "Failed to configure git user
 
 echo "Cloning Oxide repo using token"
 GIT_REPO="https://$GITHUB_TOKEN@github.com/$ORG_NAME/Oxide.git"
-git clone --depth 1 $GIT_REPO $TRAVIS_BUILD_DIR/Oxide >/dev/null || die_with "Failed to clone Oxide repository!"
+git clone --depth 1 $GIT_REPO $HOME/Oxide >/dev/null || die_with "Failed to clone Oxide repository!"
 
-cd $TRAVIS_BUILD_DIR/Oxide || die_with "Failed to change to Oxide directory!"
+cd $HOME/Oxide || die_with "Failed to change to Oxide directory!"
 ​
 ATTEMPT=0
 until [ $ATTEMPT -ge 5 ]; do
