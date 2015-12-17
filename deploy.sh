@@ -20,7 +20,7 @@ GIT_REPO="https://$GITHUB_TOKEN@github.com/$ORG_NAME/Oxide.git"
 git clone --depth 1 $GIT_REPO $HOME/Oxide >/dev/null || die_with "Failed to clone Oxide repository!"
 
 cd $HOME/Oxide || die_with "Failed to change to Oxide directory!"
-​
+
 ATTEMPT=0
 until [ $ATTEMPT -ge 5 ]; do
     echo "Fetching any changes from Oxide repository"
