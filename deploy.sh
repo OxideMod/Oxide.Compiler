@@ -28,7 +28,7 @@ until [ $ATTEMPT -ge 5 ]; do
     git reset --hard origin/master
 
     echo "Copying file(s) to Oxide directory"
-    cp -vf $TRAVIS_BUILD_DIR/{CSharpCompiler,libmono-2.0.so.1} Extensions/Oxide.Ext.CSharp/Dependencies/Linux || die_with "Failed to copy changes to Oxide!"
+    cp -vf $TRAVIS_BUILD_DIR/{CSharpCompiler,libmonoboehm-2.0.so.1} Extensions/Oxide.Ext.CSharp/Dependencies/Linux || die_with "Failed to copy changes to Oxide!"
 
     echo "Adding and committing changes"
     git add . || die_with "Failed to add files for commit!"
