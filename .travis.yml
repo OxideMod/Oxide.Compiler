@@ -1,14 +1,10 @@
-# Use new Travis-CI infrastructure
 sudo: false
-
-# Source language
 language: csharp
 mono: beta
 
 addons:
   apt:
     packages:
-    # Install UPX for compression
     - upx-ucl
 
 script:
@@ -26,15 +22,12 @@ after_success:
   - "[[ $TRAVIS_PULL_REQUEST == false ]] && [[ $TRAVIS_REPO_SLUG == OxideMod/CSharpCompiler ]] && [[ $TRAVIS_BRANCH == master ]] && ./deploy.sh"
 
 notifications:
-  # Disable build status email notifications, until the issue with forks is fixed
   email: false
-  # Slack (oxidemod.slack.com)
   slack:
     rooms:
-      secure: "PLAlvwl3x5F5o3rWV4OUw0eSQj6eP/e1UnG5b664ggE5SQJnbFfuWbRU7fpCNPD2ooNYobZNB22Q/XBOxJd8W9OjIx1oPkpG+L5hKk6MgPhxT9SlK5yE8IYXOuqeoXnOxk+6Zmbxfq2Z5o+FNm7ELIemQGYMfwiJ5wwRis9wiXs="
+      secure: "L7sn29xX0qRu0WI5N7i1xgiVgw+PsbAFlKf/snwwhrgIEQ+2vnbTpSFbCaP0EWho+x2rpFkiX0uULyAFj2jY1l1WYjF+TUNrtdiyEM4Lkt5o66cmKLQMoUCXwpFiKwnXlfiBcpNfkFjVhFedBr2MTv/ohKD0dCa4Bbalrgy/emo="
 
 env:
   global:
     - PKG_CONFIG_PATH=/usr/lib/pkgconfig
-    # Super secure, encrypted variables! Ssssh!
-    - secure: "o1DCUfMbn7W5HPLkrDOL1XtI3sVjFcVFjXyHUS9+uCU6gjrGWfNwU/Jk/NTLK2IpdYLrj0E9eoatlrcY3WLuLpgFL4g2VwnZVnRwuBE8jNzic8b+b+YrAltoZoaaxe7rzjGYL3GZ6UsplHSH5ZHR7odDhgwhG9pB4oEcRiPHWwc="
+    - secure: "NwFnFj8UFdw+rCwDbEek7FihZtpf3IeQ8yRy6gmmMZB+vXpRpvECW3jOKzMZw9mPp8qsvB88A9rIHDkveiFICwAJpzBo9FNwzaaceEPOrAdEkmCO8bTsaM/15PBeMAvR6JiFg2uOAnhZ92xSlslazaY/oU9K8M6Tvs3hzjgQ1KE="
