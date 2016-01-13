@@ -20,7 +20,7 @@ before_build:
 
 build_script:
   # Create temp files from source file and dependencies
-  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle \"$SOURCE_FILES\" -c -o temp.c -oo temp.o --machine-config \"$MACHINECONFIG\""'
+  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle $SOURCE_FILES -c -o temp.c -oo temp.o --machine-config \"$MACHINECONFIG\""'
   - ps: (Get-Content temp.c -Raw) | Foreach-Object {$_ -replace "int main(.|\n)*", (Get-Content Resources\win.c -Raw)} | Set-Content temp.c
   - ps: (Get-Content Resources\resource.rc -Raw) | Foreach-Object {$_ -replace "(?<version>\d[,|\.]\d[,|\.]\d[,|\.])\d", "`${version}$env:APPVEYOR_BUILD_NUMBER" } | Set-Content Resources\resource.rc
   - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; windres -i Resources/resource.rc -o resource.o"'

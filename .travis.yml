@@ -11,7 +11,7 @@ addons:
 
 script:
   # Create temp files from source file and dependencies
-  - mkbundle $SOURCE_FILES -c -o temp.c -oo temp.o --deps
+  - mkbundle $SOURCE_FILES -c -o temp.c -oo temp.o
   # Create final file from temp files
   - gcc -g -o CSharpCompiler -Wall temp.c `pkg-config --cflags --libs mono-2` temp.o
   - sudo dpkg --add-architecture i386
@@ -20,7 +20,7 @@ script:
   - dpkg -x libmonoboehm*.deb temp/
   - cp -P temp/usr/lib/libmonoboehm-2.0.so.1 temp/usr/lib/libmono-2.0.so
   - export AS="as --32"
-  - mkbundle $SOURCE_FILES -c -o temp.c -oo temp.o --deps
+  - mkbundle $SOURCE_FILES -c -o temp.c -oo temp.o
   - gcc -m32 -g -o CSharpCompiler.x86 -Wall temp.c -Ltemp/usr/lib/ `pkg-config --cflags --libs mono-2` temp.o
 
 after_success:
