@@ -1,4 +1,4 @@
-sudo: false
+sudo: true
 language: csharp
 mono: beta
 
@@ -6,20 +6,31 @@ addons:
   apt:
     packages:
     - upx-ucl
+    - gcc-multilib
 
 script:
   # Create temp files from source file and dependencies
-  - mkbundle Resources/basic.exe -c -o temp.c -oo temp.o --deps
+  - mkbundle $SOURCE_FILES -c -o temp.c -oo temp.o --deps
   # Create final file from temp files
   - gcc -g -o CSharpCompiler -Wall temp.c `pkg-config --cflags --libs mono-2` temp.o
+  - sudo dpkg --add-architecture i386
+  - sudo apt-get update
+  - sudo apt-get download libmonoboehm-2.0-1:i386
+  - dpkg -x libmonoboehm*.deb temp/
+  - cp -P temp/usr/lib/libmonoboehm-2.0.so.1 temp/usr/lib/libmono-2.0.so
+  - export AS="as --32"
+  - mkbundle $SOURCE_FILES -c -o temp.c -oo temp.o --deps
+  - gcc -m32 -g -o CSharpCompiler.x86 -Wall temp.c -Ltemp/usr/lib/ `pkg-config --cflags --libs mono-2` temp.o
 
 after_success:
   # Copy libmono shared library to project directory
+  - mkdir x86
   - cp /usr/lib/libmonoboehm-2.0.so.1.0.0 libmonoboehm-2.0.so.1 && chmod +x libmonoboehm-2.0.so.1
+  - cp temp/usr/lib/libmonoboehm-2.0.so.1.0.0 x86/libmonoboehm-2.0.so.1 && chmod +x x86/libmonoboehm-2.0.so.1
   # Compress using UPX and compression level 9
-  - upx -q -9 CSharpCompiler libmonoboehm-2.0.so.1
+  - upx -q -9 CSharpCompiler CSharpCompiler.x86 libmonoboehm-2.0.so.1 x86/libmonoboehm-2.0.so.1
   # Make CSharpCompiler executable
-  - chmod +x CSharpCompiler
+  - chmod +x CSharpCompiler CSharpCompiler.x86
   # Run deployment script
   - "[[ $TRAVIS_PULL_REQUEST == false ]] && [[ $TRAVIS_REPO_SLUG == OxideMod/CSharpCompiler ]] && [[ $TRAVIS_BRANCH == master ]] && ./deploy.sh"
 
@@ -32,4 +43,6 @@ notifications:
 env:
   global:
     - PKG_CONFIG_PATH=/usr/lib/pkgconfig
+    - MONO_LIB=/usr/lib/mono/4.5
+    - SOURCE_FILES="Resources/basic.exe $MONO_LIB/mscorlib.dll $MONO_LIB/System.dll $MONO_LIB/System.Core.dll $MONO_LIB/System.Xml.dll"
     - secure: "NwFnFj8UFdw+rCwDbEek7FihZtpf3IeQ8yRy6gmmMZB+vXpRpvECW3jOKzMZw9mPp8qsvB88A9rIHDkveiFICwAJpzBo9FNwzaaceEPOrAdEkmCO8bTsaM/15PBeMAvR6JiFg2uOAnhZ92xSlslazaY/oU9K8M6Tvs3hzjgQ1KE="

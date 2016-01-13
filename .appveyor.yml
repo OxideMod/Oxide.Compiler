@@ -6,8 +6,8 @@ clone_depth: 1
 # Install needed build dependencies
 before_build:
   # Download and install the required version of Mono
-  - ps: Start-FileDownload "http://download.mono-project.com/archive/4.0.3/windows-installer/mono-4.0.3-gtksharp-2.12.26-win32-0.msi" -FileName "mono.msi"
-  - ps: Start-FileDownload "https://github.com/activescott/lessmsi/releases/download/v1.3/lessmsi-v1.3.zip" -FileName "lessmsi.zip"
+  - ps: Start-FileDownload "http://download.mono-project.com/archive/4.2.1/windows-installer/mono-4.2.1.102-gtksharp-2.12.30-win32-0.msi" -FileName "mono.msi"
+  - ps: Start-FileDownload "https://github.com/activescott/lessmsi/releases/download/v1.4/lessmsi-v1.4.zip" -FileName "lessmsi.zip"
   - 7z e lessmsi.zip > NUL
   - lessmsi x mono.msi
   # Set environmental variables and add to PATH
@@ -16,10 +16,11 @@ before_build:
   - SET PKG_CONFIG_PATH=%MONO%/lib/pkgconfig
   - SET MACHINECONFIG=%MONO_WIN%\etc\mono\4.5\machine.config
   - SET PATH=%PATH%;%MONO%\bin
+  - SET SOURCE_FILES="Resources\basic.exe $MONO_WIN\mscorlib.dll $MONO_WIN\System.dll $MONO_WIN\System.Core.dll $MONO_WIN\System.Xml.dll"
 
 build_script:
   # Create temp files from source file and dependencies
-  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle Resources/basic.exe -c -o temp.c -oo temp.o --deps --machine-config \"$MACHINECONFIG\""'
+  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; mkbundle \"$SOURCE_FILES\" -c -o temp.c -oo temp.o --machine-config \"$MACHINECONFIG\""'
   - ps: (Get-Content temp.c -Raw) | Foreach-Object {$_ -replace "int main(.|\n)*", (Get-Content Resources\win.c -Raw)} | Set-Content temp.c
   - ps: (Get-Content Resources\resource.rc -Raw) | Foreach-Object {$_ -replace "(?<version>\d[,|\.]\d[,|\.]\d[,|\.])\d", "`${version}$env:APPVEYOR_BUILD_NUMBER" } | Set-Content Resources\resource.rc
   - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; windres -i Resources/resource.rc -o resource.o"'
