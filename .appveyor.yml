@@ -16,7 +16,7 @@ before_build:
   - SET PKG_CONFIG_PATH=%MONO%/lib/pkgconfig
   - SET MACHINECONFIG=%MONO_WIN%\etc\mono\4.5\machine.config
   - SET PATH=%PATH%;%MONO%\bin
-  - SET SOURCE_FILES="Resources\basic.exe $MONO_WIN\mscorlib.dll $MONO_WIN\System.dll $MONO_WIN\System.Core.dll $MONO_WIN\System.Xml.dll"
+  - SET SOURCE_FILES="Resources\basic.exe %MONO_WIN%\mscorlib.dll %MONO_WIN%\System.dll %MONO_WIN%\System.Core.dll %MONO_WIN%\System.Xml.dll"
 
 build_script:
   # Create temp files from source file and dependencies
