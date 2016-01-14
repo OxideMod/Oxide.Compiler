@@ -45,7 +45,7 @@ on_success:
         git config --global user.name "AppVeyor"
         git clone -q https://$env:GITHUB_TOKEN@github.com/OxideMod/Oxide.git Oxide
         cp -force CSharpCompiler.exe Oxide\Extensions\Oxide.Ext.CSharp\Dependencies
-        cp -force $env:MONO_WIN\bin\mono-2.0.dll Oxide\Extensions\Oxide.Ext.CSharp\Dependencies
+        cp -force $env:MONO_WIN\bin\mono-2.0.dll Oxide\Extensions\Oxide.Ext.CSharp\Dependencies\x86
         cd Oxide
         git add .
         git commit -m ("CSharpCompiler Windows build $env:APPVEYOR_BUILD_NUMBER from https://github.com/$env:APPVEYOR_REPO_NAME/commit/" + $env:APPVEYOR_REPO_COMMIT.Substring(0,7))

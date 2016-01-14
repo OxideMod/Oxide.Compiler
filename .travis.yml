@@ -26,10 +26,11 @@ script:
 after_success:
   # Copy libmono shared library to project directory
   - mkdir x86
-  - cp /usr/lib/libmonoboehm-2.0.so.1.0.0 libmonoboehm-2.0.so.1 && chmod +x libmonoboehm-2.0.so.1
+  - mkdir x64
+  - cp /usr/lib/libmonoboehm-2.0.so.1.0.0 x64/libmonoboehm-2.0.so.1 && chmod +x x64/libmonoboehm-2.0.so.1
   - cp temp/usr/lib/libmonoboehm-2.0.so.1.0.0 x86/libmonoboehm-2.0.so.1 && chmod +x x86/libmonoboehm-2.0.so.1
   # Compress using UPX and compression level 9
-  - upx -q -9 CSharpCompiler CSharpCompiler.x86 libmonoboehm-2.0.so.1 x86/libmonoboehm-2.0.so.1
+  - upx -q -9 CSharpCompiler CSharpCompiler.x86 x64/libmonoboehm-2.0.so.1 x86/libmonoboehm-2.0.so.1
   # Make CSharpCompiler executable
   - chmod +x CSharpCompiler CSharpCompiler.x86
   # Run deployment script
