@@ -12,11 +12,12 @@ before_build:
   - lessmsi x mono.msi
   # Set environmental variables and add to PATH
   - SET MONO_WIN=%APPVEYOR_BUILD_FOLDER%\mono\SourceDir\Mono
+  - SET MONO_LIB=%MONO_WIN%\lib\mono\4.5
   - for /f "delims=" %%a in ('%%CYG_PATH%% %%MONO_WIN%%') do @set MONO=%%a
   - SET PKG_CONFIG_PATH=%MONO%/lib/pkgconfig
   - SET MACHINECONFIG=%MONO_WIN%\etc\mono\4.5\machine.config
   - SET PATH=%PATH%;%MONO%\bin
-  - SET SOURCE_FILES="Resources\basic.exe %MONO_WIN%\mscorlib.dll %MONO_WIN%\System.dll %MONO_WIN%\System.Core.dll %MONO_WIN%\System.Xml.dll"
+  - SET SOURCE_FILES=%APPVEYOR_BUILD_FOLDER%\Resources\basic.exe %MONO_LIB%\mscorlib.dll %MONO_LIB%\System.dll %MONO_LIB%\System.Core.dll %MONO_LIB%\System.Xml.dll
 
 build_script:
   # Create temp files from source file and dependencies
