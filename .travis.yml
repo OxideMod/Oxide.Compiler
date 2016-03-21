@@ -15,7 +15,7 @@ script:
   # Create final file from temp files
   - gcc -g -o CSharpCompiler -Wall temp.c `pkg-config --cflags --libs mono-2` temp.o
   - sudo dpkg --add-architecture i386
-  - sudo apt-get update
+  - sudo apt-get update -qq || true
   - sudo apt-get download libmonoboehm-2.0-1:i386
   - dpkg -x libmonoboehm*.deb temp/
   - cp -P temp/usr/lib/libmonoboehm-2.0.so.1 temp/usr/lib/libmono-2.0.so
