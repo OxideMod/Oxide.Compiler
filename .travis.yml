@@ -33,13 +33,13 @@ after_success:
   # Make CSharpCompiler executable
   - chmod +x CSharpCompiler CSharpCompiler.x86
   # Run deployment script
-  - "[[ $TRAVIS_PULL_REQUEST == false ]] && [[ $TRAVIS_REPO_SLUG == OxideMod/CSharpCompiler ]] && [[ $TRAVIS_BRANCH == master ]] && ./deploy.sh"
+  - "[[ $TRAVIS_REPO_SLUG == OxideMod/CSharpCompiler ]] && [[ $TRAVIS_PULL_REQUEST == false ]] && [[ $TRAVIS_BRANCH == master ]] && ./deploy.sh"
 
 notifications:
   email: false
   slack:
     rooms:
-      secure: "L7sn29xX0qRu0WI5N7i1xgiVgw+PsbAFlKf/snwwhrgIEQ+2vnbTpSFbCaP0EWho+x2rpFkiX0uULyAFj2jY1l1WYjF+TUNrtdiyEM4Lkt5o66cmKLQMoUCXwpFiKwnXlfiBcpNfkFjVhFedBr2MTv/ohKD0dCa4Bbalrgy/emo="
+      secure: "R6ShwcJxfU3j12ObxJwsGyNjYb2cMIn6BOy4XD0bCp11LToGj7+PQ4tk4qytjGgAHIMRmIAY/o4rzpP7QO1rmBKljcnj3zt0jn9wLhoF/31NLe6IQKC3+0OnbdS77eS94GIck4WR+NxCle6PvC9Gaf58iqty0rT4B0YUxipzvn8="
 
 env:
   global:
