@@ -7,7 +7,7 @@ clone_depth: 1
 before_build:
   # Download and install latest version of CYGWIN
   - ps: 'Start-FileDownload "http://cygwin.com/setup-x86.exe" -FileName "setup-x86.exe"'
-  - 'setup-x86.exe --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages autoconf,automake,bison,gcc-core,gcc-g++,mingw-runtime,mingw-binutils,mingw-gcc-core,mingw-gcc-g++,mingw-pthreads,mingw-w32api,libtool,make,python,gettext-devel,gettext,intltool,libiconv,pkg-config,git,curl,libxslt > NUL 2>&1'
+  - 'setup-x86.exe --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages autoconf,automake,bison,gcc-core,gcc-g++,mingw64-i686-runtime,mingw64-i686-binutils,mingw64-i686-gcc-core,mingw64-i686-gcc-g++,mingw64-i686-pthreads,mingw64-i686-w32api,libtool,make,python,gettext-devel,gettext,intltool,libiconv,pkg-config,git,curl,libxslt > NUL 2>&1'
   - '%CYG_BASH% -lc "cygcheck -dc cygwin"'
   # Download and install the required version of Mono
   - ps: Start-FileDownload "http://download.mono-project.com/archive/4.4.0/windows-installer/mono-4.4.0.142-gtksharp-2.12.38-win32-0.msi" -FileName "mono.msi"
@@ -30,7 +30,7 @@ build_script:
   - ps: (Get-Content Resources\resource.rc -Raw) | Foreach-Object {$_ -replace "(?<version>\d[,|\.]\d[,|\.]\d[,|\.])\d", "`${version}$env:APPVEYOR_BUILD_NUMBER" } | Set-Content Resources\resource.rc
   - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; windres -i Resources/resource.rc -o resource.o"'
   # Create final file from temp files
-  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; gcc -m32 -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o resource.o"'
+  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-w64-mingw32-gcc -m32 -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o resource.o"'
 
 on_success:
   # Download and unpack UPX for compression
