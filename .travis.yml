@@ -46,4 +46,4 @@ env:
     - PKG_CONFIG_PATH=/usr/lib/pkgconfig
     - MONO_LIB=/usr/lib/mono/4.5
     - SOURCE_FILES="Resources/basic.exe $MONO_LIB/mscorlib.dll $MONO_LIB/System.dll $MONO_LIB/System.Core.dll $MONO_LIB/System.Xml.dll"
-    - secure: "NwFnFj8UFdw+rCwDbEek7FihZtpf3IeQ8yRy6gmmMZB+vXpRpvECW3jOKzMZw9mPp8qsvB88A9rIHDkveiFICwAJpzBo9FNwzaaceEPOrAdEkmCO8bTsaM/15PBeMAvR6JiFg2uOAnhZ92xSlslazaY/oU9K8M6Tvs3hzjgQ1KE="
+    - secure: "YC80Sew1MfQkDfEiZoTDrmgt4yK5PDAnm5UkvJ0b2MuYjLlaV1Pw/84NhUshPIX+jVSyZKFu9xevL1OU41IFWOihzNDFr3n4lFHHaWLgEPeXxdSiS/XMkv34CUx1D0JNUEAMmHZKa5FmLXPK2N9ypkrVUo7OnswbajoSa469yc8="

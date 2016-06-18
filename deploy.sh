@@ -40,7 +40,7 @@ until [ $ATTEMPT -ge 5 ]; do
     git repack --max-pack-size=100M -a -d
 
     echo "Pushing build to GitHub"
-    git push -q origin master >/dev/null && break || die_with "Failed to push to GitHub!"
+    git push -q origin develop >/dev/null && break || die_with "Failed to push to GitHub!"
     ATTEMPT=$[$ATTEMPT+1]
     sleep 15
 done || die_with "Failed to deploy build!"
