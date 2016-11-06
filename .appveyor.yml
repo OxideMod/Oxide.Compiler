@@ -35,7 +35,7 @@ build_script:
 
 on_success:
   # Download and unpack UPX for compression
-  - ps: Start-FileDownload "http://upx.sourceforge.net/download/upx391w.zip" -FileName "upxw.zip"
+  - ps: Start-FileDownload "https://github.com/upx/upx/releases/download/v3.91/upx391w.zip" -FileName "upxw.zip"
   - 7z e upxw.zip -aoa > NUL
   # Compress using UPX and compression level 9
   - upx.exe -q -9 CSharpCompiler.exe %MONO_WIN%/bin/mono-2.0.dll
