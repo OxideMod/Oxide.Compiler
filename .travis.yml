@@ -1,7 +1,7 @@
 sudo: required
 dist: trusty
 language: csharp
-mono: beta
+mono: 4.4.2
 
 addons:
   apt:
