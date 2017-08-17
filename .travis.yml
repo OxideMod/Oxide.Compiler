@@ -35,11 +35,12 @@ after_success:
   # Run deployment script
   - "[[ $TRAVIS_REPO_SLUG == OxideMod/CSharpCompiler ]] && [[ $TRAVIS_PULL_REQUEST == false ]] && [[ $TRAVIS_BRANCH == master ]] && ./deploy.sh"
 
-notifications:
-  email: false
-  slack:
-    rooms:
-      secure: "R6ShwcJxfU3j12ObxJwsGyNjYb2cMIn6BOy4XD0bCp11LToGj7+PQ4tk4qytjGgAHIMRmIAY/o4rzpP7QO1rmBKljcnj3zt0jn9wLhoF/31NLe6IQKC3+0OnbdS77eS94GIck4WR+NxCle6PvC9Gaf58iqty0rT4B0YUxipzvn8="
+deploy:
+  provider: bintray
+  file: descriptor.json
+  user: oxidemod
+  key:
+    secure: "qoVNWICUCZiw4DvEqPBw296qabaV+cFtOcpDayHp3pPM90Tx/cyewmUTxSvPHm+1iTIcmXSxMltH7sY/MDY2P/190TnWdKuHxzIozbi3WjrqZqj0Ekom9mMyTppqw/uABbQCx7bKZV07t+W91AZltPO0R82Q+x6aJW3/7Vu3bzE="
 
 env:
   global:
