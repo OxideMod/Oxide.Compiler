@@ -40,7 +40,7 @@ deploy:
   file: descriptor.json
   user: oxidemod
   key:
-    secure: "qoVNWICUCZiw4DvEqPBw296qabaV+cFtOcpDayHp3pPM90Tx/cyewmUTxSvPHm+1iTIcmXSxMltH7sY/MDY2P/190TnWdKuHxzIozbi3WjrqZqj0Ekom9mMyTppqw/uABbQCx7bKZV07t+W91AZltPO0R82Q+x6aJW3/7Vu3bzE="
+    secure: "pwErqst+O17xmM0lGG8wbZQidIi4pN+hTyjsjqMgKSeQwIui7yNHXLnp7V+j2WicJc9qtyJD3/c5JbM+F39hU76REpsfQLrWAtML6lqc4PD/X0RKN5/vH+SfPNJOhTQML6QsC3oZYE2ypHwvqA1LVnRvCYGLEmg1ROZYE4vehuI="
 
 env:
   global:
