@@ -1,0 +1,19 @@
+{
+    "package": {
+        "subject": "oxidemod",
+        "repo": "builds"
+    },
+
+    "version": {
+        "name": "Snapshot"
+    },
+
+    "files":
+    [
+        {
+            "includePattern": "/home/travis/build/OxideMod/CSharpCompiler/(CSharpCompiler.x(86|64]))", "uploadPattern": "$1",
+            "matrixParams": { "override": 1 }
+        }
+    ],
+    "publish": true
+}
