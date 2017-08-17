@@ -1,5 +1,6 @@
 {
     "package": {
+        "name": "Oxide",
         "subject": "oxidemod",
         "repo": "builds"
     },
