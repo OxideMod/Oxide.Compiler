@@ -12,7 +12,11 @@
     "files":
     [
         {
-            "includePattern": "/home/travis/build/OxideMod/CSharpCompiler/(CSharpCompiler.x(86|64]))", "uploadPattern": "$1",
+            "includePattern": "/home/travis/build/OxideMod/CSharpCompiler/(CSharpCompiler.x86)", "uploadPattern": "$1",
+            "matrixParams": { "override": 1 }
+        },
+        {
+            "includePattern": "/home/travis/build/OxideMod/CSharpCompiler/(CSharpCompiler.x86_x64)", "uploadPattern": "$1",
             "matrixParams": { "override": 1 }
         }
     ],
