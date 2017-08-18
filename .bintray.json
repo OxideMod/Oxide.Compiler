@@ -10,7 +10,7 @@
     "files":
     [
         {
-            "includePattern": "/home/travis/build/OxideMod/CSharpCompiler/(CSharpCompiler).(x86|x86_x64)", "uploadPattern": "$1.$2",
+            "includePattern": "/home/travis/build/OxideMod/CSharpCompiler/(CSharpCompiler).(x86$|x86_x64)", "uploadPattern": "$1.$2",
             "matrixParams": { "override": 1 }
         },
         {
