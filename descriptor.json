@@ -4,19 +4,17 @@
         "subject": "oxidemod",
         "repo": "builds"
     },
-
     "version": {
         "name": "Snapshot"
     },
-
     "files":
     [
         {
-            "includePattern": "/home/travis/build/OxideMod/CSharpCompiler/(CSharpCompiler.x86)", "uploadPattern": "$1",
+            "includePattern": "/home/travis/build/OxideMod/CSharpCompiler/(CSharpCompiler).(x86|x86_x64)", "uploadPattern": "$1.$2",
             "matrixParams": { "override": 1 }
         },
         {
-            "includePattern": "/home/travis/build/OxideMod/CSharpCompiler/(CSharpCompiler.x86_x64)", "uploadPattern": "$1",
+            "includePattern": "/home/travis/build/OxideMod/CSharpCompiler/(x86|x64)/(libmonoboehm-2.0.so.1)", "uploadPattern": "$1/$2",
             "matrixParams": { "override": 1 }
         }
     ],
