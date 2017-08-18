@@ -11,7 +11,7 @@ addons:
 
 script:
   # Compress using UPX and compression level 9
-  - cp -P /usr/lib/libmonoboehm-2.0.so.1.0.0 x64/libmonoboehm-2.0.so.1 && upx -q -9 x64/libmonoboehm-2.0.so.1
+  - mkdir x64 && cp /usr/lib/libmonoboehm-2.0.so.1.0.0 x64/libmonoboehm-2.0.so.1 && upx -q -9 x64/libmonoboehm-2.0.so.1
   # Create temp files from source file and dependencies
   - mkbundle --static $SOURCE_FILES x64/libmonoboehm-2.0.so.1 -c -o temp.c -oo temp.o
   # Create final file from temp files
@@ -20,9 +20,9 @@ script:
   - sudo dpkg --add-architecture i386 && sudo apt-get update -qq || true && sudo apt-get download libmonoboehm-2.0-1:i386
   - dpkg -x libmonoboehm*.deb temp/
   # Compress using UPX and compression level 9
-  - cp -P temp/usr/lib/libmonoboehm-2.0.so.1 x86/libmonoboehm-2.0.so.1 && upx -q -9 x86/libmonoboehm-2.0.so.1
+  - mkdir x86 && cp temp/usr/lib/libmonoboehm-2.0.so.1 x86/libmonoboehm-2.0.so.1 && upx -q -9 x86/libmonoboehm-2.0.so.1
   # Create temp files from source file and dependencies
-  - cp -P temp/usr/lib/libmonoboehm-2.0.so.1 temp/usr/lib/libmono-2.0.so
+  - cp temp/usr/lib/libmonoboehm-2.0.so.1 temp/usr/lib/libmono-2.0.so
   - export AS="as --32"
   - mkbundle --static $SOURCE_FILES x86/libmonoboehm-2.0.so.1 -c -o temp.c -oo temp.o
   - gcc -m32 -g -o CSharpCompiler.x86 -Wall temp.c -Ltemp/usr/lib/ `pkg-config --cflags --libs mono-2` temp.o
