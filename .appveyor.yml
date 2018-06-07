@@ -31,14 +31,14 @@ build_script:
   - ps: (Get-Content Resources\resource.rc -Raw) | Foreach-Object {$_ -replace "(?<version>\d[,|\.]\d[,|\.]\d[,|\.])\d", "`${version}$env:APPVEYOR_BUILD_NUMBER" } | Set-Content Resources\resource.rc
   - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; windres -i Resources/resource.rc -o resource.o"'
   # Create final file from temp files
-  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-w64-mingw32-gcc -m32 -g -o CSharpCompiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o resource.o"'
+  - '%CYG_BASH% -lc "cd $APPVEYOR_BUILD_FOLDER; exec 0</dev/null; export MONO_PATH=$MONO; export PKG_CONFIG_PATH=$PKG_CONFIG_PATH; i686-w64-mingw32-gcc -m32 -g -o Compiler.exe -Wall temp.c `pkg-config --cflags --libs mono-2 | sed \"s/-mwindows//g\"` temp.o resource.o"'
 
 on_success:
   # Download and unpack UPX for compression
   - ps: Start-FileDownload "https://github.com/upx/upx/releases/download/v3.94/upx394w.zip" -FileName "upxw.zip"
   - 7z e upxw.zip -aoa > NUL
   # Compress using UPX and compression level 9
-  - upx.exe -q -9 CSharpCompiler.exe %MONO_WIN%/bin/mono-2.0.dll
+  - upx.exe -q -9 Compiler.exe %MONO_WIN%/bin/mono-2.0.dll
 
 notifications:
   - provider: Email
