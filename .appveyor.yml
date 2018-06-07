@@ -40,6 +40,9 @@ on_success:
   # Compress using UPX and compression level 9
   - upx.exe -q -9 Compiler.exe %MONO_WIN%/bin/mono-2.0.dll
 
+artifacts:
+  - path: Compiler.exe
+
 notifications:
   - provider: Email
     on_build_success: false
