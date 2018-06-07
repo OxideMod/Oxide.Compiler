@@ -32,13 +32,6 @@ after_success:
   - chmod +x CSharpCompiler.x86_x64 CSharpCompiler.x86 x64/libmonoboehm-2.0.so.1 x86/libmonoboehm-2.0.so.1
   - upx -q -9 CSharpCompiler.x86_x64 CSharpCompiler.x86 x64/libmonoboehm-2.0.so.1 x86/libmonoboehm-2.0.so.1
 
-deploy:
-  provider: bintray
-  file: .bintray.json
-  user: lukespragg
-  key:
-    secure: YWfrLVagPOf7cW/Lb6tYhrGY7zWLEKASHTSbW6D/iZEAWpQF/boXfNwcVuoL/iM8nRW148YQUp6yImqMhUWd1sTLW6K3tptja4YyclOqZsIXEpRkG3cAaIlIY3wCp/mCbSlsGd/g9Dof1uC0sGX1G/ADYwjXumfhQvJUbS+PDss=
-
 notifications:
   email: false
 
