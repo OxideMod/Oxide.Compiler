@@ -1,0 +1,1072 @@
+From 3446806c5273c4cf22ee30dbab29111550b2ea3f Mon Sep 17 00:00:00 2001
+Date: Wed, 6 Jun 2018 22:49:05 -0400
+Subject: [PATCH] Add steaming compiler
+
+---
+ mcs/mcs/ObjectStream/Data/CompilerData.cs     |  27 ++
+ mcs/mcs/ObjectStream/Data/CompilerFile.cs     |  11 +
+ .../Data/CompilerLanguageVersion.cs           |  18 ++
+ mcs/mcs/ObjectStream/Data/CompilerMessage.cs  |  16 ++
+ .../ObjectStream/Data/CompilerMessageType.cs  |  14 +
+ mcs/mcs/ObjectStream/Data/CompilerPlatform.cs |  15 +
+ mcs/mcs/ObjectStream/Data/CompilerTarget.cs   |  10 +
+ mcs/mcs/ObjectStream/IO/BindChanger.cs        |  22 ++
+ .../ObjectStream/IO/ObjectStreamWrapper.cs    | 132 +++++++++
+ mcs/mcs/ObjectStream/ObjectStreamClient.cs    |  94 +++++++
+ .../ObjectStream/ObjectStreamConnection.cs    | 105 +++++++
+ mcs/mcs/ObjectStream/Threading/Worker.cs      |  68 +++++
+ mcs/mcs/assembly.cs                           |  10 +-
+ mcs/mcs/driver.cs                             | 258 +++++++++++++++++-
+ mcs/mcs/ikvm.cs                               |  20 +-
+ mcs/mcs/location.cs                           |   1 +
+ mcs/mcs/mcs.exe.sources                       |   5 +
+ 17 files changed, 816 insertions(+), 10 deletions(-)
+ create mode 100644 mcs/mcs/ObjectStream/Data/CompilerData.cs
+ create mode 100644 mcs/mcs/ObjectStream/Data/CompilerFile.cs
+ create mode 100644 mcs/mcs/ObjectStream/Data/CompilerLanguageVersion.cs
+ create mode 100644 mcs/mcs/ObjectStream/Data/CompilerMessage.cs
+ create mode 100644 mcs/mcs/ObjectStream/Data/CompilerMessageType.cs
+ create mode 100644 mcs/mcs/ObjectStream/Data/CompilerPlatform.cs
+ create mode 100644 mcs/mcs/ObjectStream/Data/CompilerTarget.cs
+ create mode 100644 mcs/mcs/ObjectStream/IO/BindChanger.cs
+ create mode 100644 mcs/mcs/ObjectStream/IO/ObjectStreamWrapper.cs
+ create mode 100644 mcs/mcs/ObjectStream/ObjectStreamClient.cs
+ create mode 100644 mcs/mcs/ObjectStream/ObjectStreamConnection.cs
+ create mode 100644 mcs/mcs/ObjectStream/Threading/Worker.cs
+
+diff --git a/mcs/mcs/ObjectStream/Data/CompilerData.cs b/mcs/mcs/ObjectStream/Data/CompilerData.cs
+new file mode 100644
+index 000000000000..8b259b8a583f
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/Data/CompilerData.cs
+@@ -0,0 +1,27 @@
++﻿using System;
++
++namespace ObjectStream.Data
++{
++    [Serializable]
++    internal class CompilerData
++    {
++        public CompilerData()
++        {
++            StdLib = false;
++            Target = CompilerTarget.Library;
++            Platform = CompilerPlatform.AnyCPU;
++            Version = CompilerLanguageVersion.Default;
++            LoadDefaultReferences = false;
++            SdkVersion = "2";
++        }
++        public bool LoadDefaultReferences { get; set; }
++        public string OutputFile { get; set; }
++        public CompilerPlatform Platform { get; set; }
++        public CompilerFile[] ReferenceFiles { get; set; }
++        public string SdkVersion { get; set; }
++        public CompilerFile[] SourceFiles { get; set; }
++        public bool StdLib { get; set; }
++        public CompilerTarget Target { get; set; }
++        public CompilerLanguageVersion Version { get; set; }
++    }
++}
+diff --git a/mcs/mcs/ObjectStream/Data/CompilerFile.cs b/mcs/mcs/ObjectStream/Data/CompilerFile.cs
+new file mode 100644
+index 000000000000..d1342a973fdd
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/Data/CompilerFile.cs
+@@ -0,0 +1,11 @@
++﻿using System;
++
++namespace ObjectStream.Data
++{
++    [Serializable]
++    internal class CompilerFile
++    {
++        public string Name { get; set; }
++        public byte[] Data { get; set; }
++    }
++}
+diff --git a/mcs/mcs/ObjectStream/Data/CompilerLanguageVersion.cs b/mcs/mcs/ObjectStream/Data/CompilerLanguageVersion.cs
+new file mode 100644
+index 000000000000..a960fa90b7ef
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/Data/CompilerLanguageVersion.cs
+@@ -0,0 +1,18 @@
++﻿using System;
++
++namespace ObjectStream.Data
++{
++    [Serializable]
++    internal enum CompilerLanguageVersion
++    {
++        ISO_1 = 1,
++        ISO_2 = 2,
++        V_3 = 3,
++        V_4 = 4,
++        V_5 = 5,
++        V_6 = 6,
++        Experimental = 100,
++
++        Default = V_6
++    }
++}
+diff --git a/mcs/mcs/ObjectStream/Data/CompilerMessage.cs b/mcs/mcs/ObjectStream/Data/CompilerMessage.cs
+new file mode 100644
+index 000000000000..0caaf7131822
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/Data/CompilerMessage.cs
+@@ -0,0 +1,16 @@
++﻿using System;
++
++namespace ObjectStream.Data
++{
++    [Serializable]
++    internal class CompilerMessage
++    {
++        public object Data { get; set; }
++
++        public object ExtraData { get; set; }
++
++        public int Id { get; set; }
++
++        public CompilerMessageType Type { get; set; }
++    }
++}
+diff --git a/mcs/mcs/ObjectStream/Data/CompilerMessageType.cs b/mcs/mcs/ObjectStream/Data/CompilerMessageType.cs
+new file mode 100644
+index 000000000000..e836dc14031f
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/Data/CompilerMessageType.cs
+@@ -0,0 +1,14 @@
++﻿using System;
++
++namespace ObjectStream.Data
++{
++    [Serializable]
++    internal enum CompilerMessageType
++    {
++        Assembly,
++        Compile,
++        Error,
++        Exit,
++        Ready
++    }
++}
+diff --git a/mcs/mcs/ObjectStream/Data/CompilerPlatform.cs b/mcs/mcs/ObjectStream/Data/CompilerPlatform.cs
+new file mode 100644
+index 000000000000..54c0b9840ec8
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/Data/CompilerPlatform.cs
+@@ -0,0 +1,15 @@
++using System;
++
++namespace ObjectStream.Data
++{
++    [Serializable]
++    internal enum CompilerPlatform
++    {
++        AnyCPU,
++        AnyCPU32Preferred,
++        Arm,
++        X86,
++        X64,
++        IA64
++    }
++}
+diff --git a/mcs/mcs/ObjectStream/Data/CompilerTarget.cs b/mcs/mcs/ObjectStream/Data/CompilerTarget.cs
+new file mode 100644
+index 000000000000..cb20bfa39256
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/Data/CompilerTarget.cs
+@@ -0,0 +1,10 @@
++using System;
++
++namespace ObjectStream.Data
++{
++    [Serializable]
++    internal enum CompilerTarget
++    {
++        Library, Exe, Module, WinExe
++    }
++}
+diff --git a/mcs/mcs/ObjectStream/IO/BindChanger.cs b/mcs/mcs/ObjectStream/IO/BindChanger.cs
+new file mode 100644
+index 000000000000..2c91c0297bde
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/IO/BindChanger.cs
+@@ -0,0 +1,22 @@
++using System;
++using System.Reflection;
++using System.Runtime.Serialization;
++
++namespace ObjectStream.IO
++{
++    public class BindChanger : SerializationBinder
++    {
++        public override Type BindToType(string assemblyName, string typeName)
++        {
++            /*if (typeName.Contains(".")) typeName = typeName.Substring(typeName.LastIndexOf(".", StringComparison.Ordinal) + 1);
++            if (typeName.Contains("+")) typeName = typeName.Substring(typeName.LastIndexOf("+", StringComparison.Ordinal) + 1);
++
++            var type = AppDomain.CurrentDomain.GetAssemblies()
++                .SelectMany(x => x.GetTypes())
++                .FirstOrDefault(x => x.Name.Equals(typeName));
++
++            return type != null ? Type.GetType(string.Format("{0}, {1}", type.FullName, Assembly.GetExecutingAssembly().FullName)) : null;*/
++            return Type.GetType(string.Format("{0}, {1}", typeName, Assembly.GetExecutingAssembly().FullName));
++        }
++    }
++}
+diff --git a/mcs/mcs/ObjectStream/IO/ObjectStreamWrapper.cs b/mcs/mcs/ObjectStream/IO/ObjectStreamWrapper.cs
+new file mode 100644
+index 000000000000..395bf74c9c0e
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/IO/ObjectStreamWrapper.cs
+@@ -0,0 +1,132 @@
++﻿using System;
++using System.IO;
++using System.Linq;
++using System.Net;
++using System.Runtime.Serialization.Formatters;
++using System.Runtime.Serialization.Formatters.Binary;
++using System.Text;
++
++namespace ObjectStream.IO
++{
++    public class ObjectStreamWrapper<TReadWrite> : ObjectStreamWrapper<TReadWrite, TReadWrite>
++        where TReadWrite : class
++    {
++        public ObjectStreamWrapper(Stream inStream, Stream outStream) : base(inStream, outStream)
++        {
++        }
++    }
++
++    public class ObjectStreamWrapper<TRead, TWrite>
++        where TRead : class
++        where TWrite : class
++    {
++        private readonly BinaryFormatter _binaryFormatter = new BinaryFormatter { Binder = new BindChanger(), AssemblyFormat = FormatterAssemblyStyle.Simple };
++        private readonly Stream _inStream;
++        private readonly Stream _outStream;
++
++        private bool _run;
++
++        public ObjectStreamWrapper(Stream inStream, Stream outStream)
++        {
++            _inStream = inStream;
++            _outStream = outStream;
++            _run = true;
++        }
++
++        public bool CanRead => _run && _inStream.CanRead;
++
++        public bool CanWrite => _run && _outStream.CanWrite;
++
++        public void Close()
++        {
++            if (!_run) return;
++            _run = false;
++            try
++            {
++                _outStream.Close();
++            }
++            catch (Exception) { }
++            try
++            {
++                _inStream.Close();
++            }
++            catch (Exception) {}
++        }
++
++        public TRead ReadObject()
++        {
++            var len = ReadLength();
++            return len == 0 ? null : ReadObject(len);
++        }
++
++        #region Private stream readers
++
++        private int ReadLength()
++        {
++            const int lensize = sizeof(int);
++            var lenbuf = new byte[lensize];
++            var bytesRead = _inStream.Read(lenbuf, 0, lensize);
++            if (bytesRead == 0) return 0;
++            if (bytesRead != lensize)
++            {
++                //TODO hack to ignore BOM
++                Array.Resize(ref lenbuf, Encoding.UTF8.GetPreamble().Length);
++                if (Encoding.UTF8.GetPreamble().SequenceEqual(lenbuf)) return ReadLength();
++                throw new IOException(string.Format("Expected {0} bytes but read {1}", lensize, bytesRead));
++            }
++            return IPAddress.NetworkToHostOrder(BitConverter.ToInt32(lenbuf, 0));
++        }
++
++        private TRead ReadObject(int len)
++        {
++            var data = new byte[len];
++            int count;
++            int sum = 0;
++            while (len - sum > 0 && (count = _inStream.Read(data, sum, len - sum)) > 0)
++                sum += count;
++            using (var memoryStream = new MemoryStream(data))
++            {
++                return (TRead)_binaryFormatter.Deserialize(memoryStream);
++            }
++        }
++
++        #endregion
++
++        public void WriteObject(TWrite obj)
++        {
++            var data = Serialize(obj);
++            WriteLength(data.Length);
++            WriteObject(data);
++            Flush();
++        }
++
++        #region Private stream writers
++
++        private byte[] Serialize(TWrite obj)
++        {
++            using (var memoryStream = new MemoryStream())
++            {
++                _binaryFormatter.Serialize(memoryStream, obj);
++                return memoryStream.ToArray();
++            }
++        }
++
++        private void WriteLength(int len)
++        {
++            var lenbuf = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(len));
++            _outStream.Write(lenbuf, 0, lenbuf.Length);
++        }
++
++        private void WriteObject(byte[] data)
++        {
++            _outStream.Write(data, 0, data.Length);
++        }
++
++        private void Flush()
++        {
++            _outStream.Flush();
++        }
++
++        #endregion
++    }
++}
+diff --git a/mcs/mcs/ObjectStream/ObjectStreamClient.cs b/mcs/mcs/ObjectStream/ObjectStreamClient.cs
+new file mode 100644
+index 000000000000..998185ecf3d9
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/ObjectStreamClient.cs
+@@ -0,0 +1,94 @@
++﻿using System;
++using System.IO;
++using ObjectStream.IO;
++using ObjectStream.Threading;
++
++namespace ObjectStream
++{
++    public class ObjectStreamClient<TReadWrite> : ObjectStreamClient<TReadWrite, TReadWrite> where TReadWrite : class
++    {
++        public ObjectStreamClient(Stream inStream, Stream outStream) : base(inStream, outStream)
++        {
++        }
++    }
++
++    public delegate void StreamExceptionEventHandler(Exception exception);
++
++    public class ObjectStreamClient<TRead, TWrite>
++        where TRead : class
++        where TWrite : class
++    {
++        private readonly Stream _inStream;
++        private readonly Stream _outStream;
++        private ObjectStreamConnection<TRead, TWrite> _connection;
++
++        public ObjectStreamClient(Stream inStream, Stream outStream)
++        {
++            _inStream = inStream;
++            _outStream = outStream;
++        }
++
++        public event ConnectionMessageEventHandler<TRead, TWrite> Message;
++
++        public event StreamExceptionEventHandler Error;
++
++        public void Start()
++        {
++            var worker = new Worker();
++            worker.Error += OnError;
++            worker.DoWork(ListenSync);
++        }
++
++        public void PushMessage(TWrite message)
++        {
++            if (_connection != null)
++                _connection.PushMessage(message);
++        }
++
++        public void Stop()
++        {
++            if (_connection != null)
++                _connection.Close();
++        }
++
++        #region Private methods
++
++        private void ListenSync()
++        {
++            // Create a Connection object for the data pipe
++            _connection = ConnectionFactory.CreateConnection<TRead, TWrite>(_inStream, _outStream);
++            _connection.ReceiveMessage += OnReceiveMessage;
++            _connection.Error += ConnectionOnError;
++            _connection.Open();
++        }
++
++        private void OnReceiveMessage(ObjectStreamConnection<TRead, TWrite> connection, TRead message)
++        {
++            if (Message != null)
++                Message(connection, message);
++        }
++
++        private void ConnectionOnError(ObjectStreamConnection<TRead, TWrite> connection, Exception exception)
++        {
++            OnError(exception);
++        }
++
++        private void OnError(Exception exception)
++        {
++            if (Error != null)
++                Error(exception);
++        }
++
++        #endregion
++    }
++
++    internal static class ObjectStreamClientFactory
++    {
++        public static ObjectStreamWrapper<TRead, TWrite> Connect<TRead, TWrite>(Stream inStream, Stream outStream)
++            where TRead : class
++            where TWrite : class
++        {
++            return new ObjectStreamWrapper<TRead, TWrite>(inStream, outStream);
++        }
++    }
++}
+diff --git a/mcs/mcs/ObjectStream/ObjectStreamConnection.cs b/mcs/mcs/ObjectStream/ObjectStreamConnection.cs
+new file mode 100644
+index 000000000000..1843dab27ee0
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/ObjectStreamConnection.cs
+@@ -0,0 +1,105 @@
++﻿using System;
++using System.Collections.Generic;
++using System.IO;
++using System.Threading;
++using ObjectStream.IO;
++using ObjectStream.Threading;
++
++namespace ObjectStream
++{
++    public class ObjectStreamConnection<TRead, TWrite>
++        where TRead : class
++        where TWrite : class
++    {
++        private readonly ObjectStreamWrapper<TRead, TWrite> _streamWrapper;
++        private readonly Queue<TWrite> _writeQueue = new Queue<TWrite>();
++        private readonly AutoResetEvent _writeSignal = new AutoResetEvent(false);
++
++        internal ObjectStreamConnection(Stream inStream, Stream outStream)
++        {
++            _streamWrapper = new ObjectStreamWrapper<TRead, TWrite>(inStream, outStream);
++        }
++
++        public event ConnectionMessageEventHandler<TRead, TWrite> ReceiveMessage;
++
++        public event ConnectionExceptionEventHandler<TRead, TWrite> Error;
++
++        public void Open()
++        {
++            var readWorker = new Worker();
++            readWorker.Error += OnError;
++            readWorker.DoWork(ReadStream);
++
++            var writeWorker = new Worker();
++            writeWorker.Error += OnError;
++            writeWorker.DoWork(WriteStream);
++        }
++
++        public void PushMessage(TWrite message)
++        {
++            _writeQueue.Enqueue(message);
++            _writeSignal.Set();
++        }
++
++        public void Close()
++        {
++            CloseImpl();
++        }
++
++        private void CloseImpl()
++        {
++            Error = null;
++            _streamWrapper.Close();
++            _writeSignal.Set();
++        }
++
++        private void OnError(Exception exception)
++        {
++            if (Error != null)
++                Error(this, exception);
++        }
++
++        private void ReadStream()
++        {
++            while (_streamWrapper.CanRead)
++            {
++                var obj = _streamWrapper.ReadObject();
++                if (ReceiveMessage != null)
++                    ReceiveMessage(this, obj);
++                if (obj != null) continue;
++                CloseImpl();
++                return;
++            }
++        }
++
++        private void WriteStream()
++        {
++            while (_streamWrapper.CanWrite)
++            {
++                _writeSignal.WaitOne();
++                while (_writeQueue.Count > 0)
++                {
++                    _streamWrapper.WriteObject(_writeQueue.Dequeue());
++                }
++            }
++        }
++    }
++
++    internal static class ConnectionFactory
++    {
++        public static ObjectStreamConnection<TRead, TWrite> CreateConnection<TRead, TWrite>(Stream inStream, Stream outStream)
++            where TRead : class
++            where TWrite : class
++        {
++            return new ObjectStreamConnection<TRead, TWrite>(inStream, outStream);
++        }
++    }
++
++    public delegate void ConnectionMessageEventHandler<TRead, TWrite>(ObjectStreamConnection<TRead, TWrite> connection, TRead message)
++        where TRead : class
++        where TWrite : class;
++
++    public delegate void ConnectionExceptionEventHandler<TRead, TWrite>(ObjectStreamConnection<TRead, TWrite> connection, Exception exception)
++        where TRead : class
++        where TWrite : class;
++}
+diff --git a/mcs/mcs/ObjectStream/Threading/Worker.cs b/mcs/mcs/ObjectStream/Threading/Worker.cs
+new file mode 100644
+index 000000000000..f0178c037746
+--- /dev/null
++++ b/mcs/mcs/ObjectStream/Threading/Worker.cs
+@@ -0,0 +1,68 @@
++﻿using System;
++using System.Threading;
++using System.Threading.Tasks;
++
++namespace ObjectStream.Threading
++{
++    internal class Worker
++    {
++        private readonly TaskScheduler _callbackThread;
++
++        private static TaskScheduler CurrentTaskScheduler
++        {
++            get
++            {
++                return (SynchronizationContext.Current != null
++                            ? TaskScheduler.FromCurrentSynchronizationContext()
++                            : TaskScheduler.Default);
++            }
++        }
++
++        public event WorkerExceptionEventHandler Error;
++
++        public Worker()
++            : this(CurrentTaskScheduler)
++        {
++        }
++
++        public Worker(TaskScheduler callbackThread)
++        {
++            _callbackThread = callbackThread;
++        }
++
++        public void DoWork(Action action)
++        {
++            //new Thread(DoWorkImpl) { IsBackground = true }.Start(action);
++            Task.Factory.StartNew(DoWorkImpl, action, CancellationToken.None, TaskCreationOptions.LongRunning, _callbackThread);
++        }
++
++        private void DoWorkImpl(object oAction)
++        {
++            var action = (Action) oAction;
++            try
++            {
++                action();
++            }
++            catch (Exception e)
++            {
++                Callback(() => Fail(e));
++            }
++        }
++
++        private void Fail(Exception exception)
++        {
++            if (Error != null)
++                Error(exception);
++        }
++
++        private void Callback(Action action)
++        {
++            //new Thread(new ThreadStart(action)).Start();
++            Task.Factory.StartNew(action, CancellationToken.None, TaskCreationOptions.None, _callbackThread);
++        }
++    }
++
++    internal delegate void WorkerSucceededEventHandler();
++
++    internal delegate void WorkerExceptionEventHandler(Exception exception);
++}
+diff --git a/mcs/mcs/assembly.cs b/mcs/mcs/assembly.cs
+index 96e43e70d999..ec12277a66a7 100644
+--- a/mcs/mcs/assembly.cs
++++ b/mcs/mcs/assembly.cs
+@@ -883,7 +883,7 @@ public void EmbedResources ()
+ 			}
+ 		}
+ 
+-		public void Save ()
++		public void Save (Stream stream = null)
+ 		{
+ 			PortableExecutableKinds pekind = PortableExecutableKinds.ILOnly;
+ 			ImageFileMachine machine;
+@@ -925,8 +925,14 @@ public void Save ()
+ 			try {
+ 				if (Compiler.Settings.Target == Target.Module) {
+ 					SaveModule (pekind, machine);
++				} else if (stream == null) {
++					Builder.Save(module.Builder.ScopeName, pekind, machine);
+ 				} else {
+-					Builder.Save (module.Builder.ScopeName, pekind, machine);
++#if STATIC
++					Builder.__Save (stream, pekind, machine);
++#else
++					throw new NotSupportedException ("Save to stream not possible");
++#endif
+ 				}
+ 			} catch (ArgumentOutOfRangeException) {
+ 				Report.Error (16, "Output file `{0}' exceeds the 4GB limit", name);
+diff --git a/mcs/mcs/driver.cs b/mcs/mcs/driver.cs
+index 4db99f7e5fe7..866376e265a0 100644
+--- a/mcs/mcs/driver.cs
++++ b/mcs/mcs/driver.cs
+@@ -20,7 +20,12 @@
+ using System.Text;
+ using System.Globalization;
+ using System.Diagnostics;
++#if STATIC
+ using System.Threading;
++using ObjectStream;
++using ObjectStream.Data;
++using System.Text.RegularExpressions;
++#endif
+ 
+ namespace Mono.CSharp
+ {
+@@ -30,6 +35,19 @@ namespace Mono.CSharp
+ 	class Driver
+ 	{
+ 		readonly CompilerContext ctx;
++#if STATIC
++		static readonly Regex FileErrorRegex = new Regex(@"([\w\.]+)\(\d+,\d+\): error|error \w+: Source file `[\\\./]*([\w\.]+)", RegexOptions.Compiled);
++		static MemoryStream _outStream;
++		static Dictionary<string, byte[]> _sourceFiles;
++		static Dictionary<string, byte[]> _referenceFiles;
++		static StringBuilder _consoleOut;
++		static bool _shouldRun = true;
++		static bool _ready;
++		static bool _exitReceived;
++		static string _logPath = "";
++		static TextWriter _logWriter;
++		const string Version = "1.0.0";
++#endif
+ 
+ 		public Driver (CompilerContext ctx)
+ 		{
+@@ -47,6 +65,19 @@ void tokenize_file (SourceFile sourceFile, ModuleContainer module, ParserSession
+ 			Stream input = null;
+ 			SeekableStreamReader reader = null;
+ 
++#if STATIC
++			if (_sourceFiles != null)
++			{
++				if (_sourceFiles.ContainsKey(sourceFile.Name))
++					input = new MemoryStream(_sourceFiles[sourceFile.Name]);
++				else
++				{
++					Report.Error(2001, "Source file `" + sourceFile.Name + "' could not be found");
++					return;
++				}
++			}
++			else
++#endif
+ 			try {
+ 				if (sourceFile.GetInputStream != null) {
+ 					reader = sourceFile.GetInputStream (sourceFile);
+@@ -146,6 +177,19 @@ public void Parse (SourceFile file, ModuleContainer module, ParserSession sessio
+ 			Stream input = null;
+ 			SeekableStreamReader reader = null;
+ 
++#if STATIC
++			if (_sourceFiles != null)
++			{
++				if (_sourceFiles.ContainsKey(file.Name))
++					input = new MemoryStream(_sourceFiles[file.Name]);
++				else
++				{
++					report.Error(2001, "Source file `{0}' could not be found", file.Name);
++					return;
++				}
++			}
++			else
++#endif
+ 			try {
+ 				if (file.GetInputStream != null) {
+ 					reader = file.GetInputStream (file);
+@@ -197,11 +241,213 @@ public static void Parse (SeekableStreamReader reader, SourceFile sourceFile, Mo
+ 			CSharpParser parser = new CSharpParser (reader, file, report, session);
+ 			parser.parse ();
+ 		}
+-		
++
++#if STATIC
++		private static string GetLogFileName()
++		{
++			return string.Format("compiler_{0:dd-MM-yyyy}.txt", DateTime.UtcNow);
++		}
++
++		public static void LogMessage(string message)
++		{
++			_logWriter.WriteLine("[Compiler v{0}] {1}", Version, message);
++		}
++
++		private static void GCCleanup()
++		{
++			System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
++			GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
++			//GC.Collect();
++		}
++
++		private static void Cleanup()
++		{
++			_consoleOut.Clear();
++			Location.Reset();
++			Linq.QueryBlock.TransparentParameter.Reset();
++			TypeInfo.Reset();
++		}
++
++		private static void FullCleanup()
++		{
++			Cleanup();
++			_outStream.Close();
++			_outStream = new MemoryStream();
++			_referenceFiles.Clear();
++			_sourceFiles.Clear();
++			RootContext.ToplevelTypes = null;
++			var type = typeof(CSharpParser);
++			type.GetField("global_yyVals", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, null);
++			type.GetField("global_yyStates", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, null);
++			GCCleanup();
++		}
++
++		private static void OnMessage(ObjectStreamConnection<CompilerMessage, CompilerMessage> connection, CompilerMessage message)
++		{
++			if (message == null)
++			{
++				LogMessage("Connection closed.");
++				_exitReceived = true;
++				//Environment.Exit(0);
++				return;
++			}
++			LogMessage("Got Message: " + message.Type);
++			switch (message.Type)
++			{
++				case CompilerMessageType.Compile:
++					try
++					{
++						var compilerData = message.Data as CompilerData;
++						if (compilerData == null || compilerData.ReferenceFiles == null || compilerData.SourceFiles == null)
++						{
++							connection.PushMessage(new CompilerMessage {Id = message.Id, Data = "Data does not contain valid CompilerData", Type = CompilerMessageType.Error});
++							return;
++						}
++						var settings = new CompilerSettings
++						{
++							StdLib = compilerData.StdLib,
++							LoadDefaultReferences = compilerData.LoadDefaultReferences,
++							OutputFile = compilerData.OutputFile,
++							Target = (Target)System.Enum.Parse(typeof(Target), System.Enum.GetName(typeof(CompilerTarget), compilerData.Target)),
++							Platform = (Platform)System.Enum.Parse(typeof(Platform), System.Enum.GetName(typeof(CompilerPlatform), compilerData.Platform)),
++							Version = (LanguageVersion)System.Enum.Parse(typeof(LanguageVersion), System.Enum.GetName(typeof(CompilerLanguageVersion), compilerData.Version)),
++							SdkVersion = compilerData.SdkVersion,
++							Optimize = true
++						};
++						foreach (var referenceFile in compilerData.ReferenceFiles)
++						{
++							settings.AssemblyReferences.Add(referenceFile.Name);
++							_referenceFiles[referenceFile.Name] = referenceFile.Data;
++						}
++						foreach (var sourceFile in compilerData.SourceFiles)
++						{
++							settings.SourceFiles.Add(new SourceFile(sourceFile.Name, sourceFile.Name, settings.SourceFiles.Count + 1));
++							_sourceFiles[sourceFile.Name] = sourceFile.Data;
++						}
++						var outString = new StringBuilder();
++						var tries = 0;
++						var files = new HashSet<string>();
++						Driver d;
++						while (!(d = new Driver(new CompilerContext(settings, new StreamReportPrinter(Console.Out)))).Compile())
++						{
++							if (settings.FirstSourceFile == null || settings.SourceFiles.Count <= 1 || tries++ > 10)
++								break;
++							var matches = FileErrorRegex.Matches(_consoleOut.ToString());
++							foreach (Match match in matches)
++							{
++								for (var i = 1; i < match.Groups.Count; i++)
++								{
++									if (string.IsNullOrWhiteSpace(match.Groups[i].Value)) continue;
++									files.Add(match.Groups[i].Value);
++								}
++							}
++							settings.SourceFiles.Clear();
++							foreach (var sourceFile in compilerData.SourceFiles)
++							{
++								if (files.Contains(sourceFile.Name)) continue;
++								settings.SourceFiles.Add(new SourceFile(sourceFile.Name, sourceFile.Name, settings.SourceFiles.Count + 1));
++							}
++							_consoleOut.AppendLine("Warning: restarting compilation");
++							outString.Append(_consoleOut);
++							Cleanup();
++							LogMessage("Restarting: " + outString);
++						}
++						outString.Append(_consoleOut);
++						connection.PushMessage(new CompilerMessage {Id = message.Id, Data = d.Report.Errors == 0 ? _outStream.ToArray() : null, ExtraData = outString.ToString(), Type = CompilerMessageType.Assembly});
++						LogMessage("Console: " + _consoleOut);
++						FullCleanup();
++					}
++					catch (Exception e)
++					{
++						LogMessage("Error: " + e.Message + Environment.NewLine + e.StackTrace);
++						connection.PushMessage(new CompilerMessage {Id = message.Id, Data = e.Message + Environment.NewLine + e.StackTrace, Type = CompilerMessageType.Error});
++						FullCleanup();
++					}
++					break;
++				case CompilerMessageType.Exit:
++					LogMessage("Exit received.");
++					_exitReceived = true;
++					//Environment.Exit(0);
++					break;
++				case CompilerMessageType.Ready:
++					_ready = true;
++					break;
++			}
++		}
++
++		private static void OnError(Exception exception)
++		{
++			LogMessage("Error: " + exception.Message + Environment.NewLine + exception.StackTrace);
++		}
++#endif
++
+ 		public static int Main (string[] args)
+ 		{
++#if BOOTSTRAP_BASIC
++			if (Type.GetType ("Mono.Runtime") != null && Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.MacOSX) {
++				for (var i = 0; i < args.Length; i++)
++				{
++					args[i] = Encoding.UTF8.GetString(Encoding.Unicode.GetBytes(args[i])).TrimEnd(new char[0]);
++				}
++			}
++#endif
+ 			Location.InEmacs = Environment.GetEnvironmentVariable ("EMACS") == "t";
+ 
++#if STATIC
++			if (Array.IndexOf(args, "/service") != -1)
++			{
++				try
++				{
++					foreach (var arg in args)
++					{
++						if (string.IsNullOrWhiteSpace(arg) || !arg.StartsWith("/logPath:"))
++							continue;
++						var value = arg.Substring(arg.IndexOf(":") + 1);
++						if (Directory.Exists(value))
++							_logPath = value;
++						break;
++					}
++					var logStream = File.AppendText(Path.Combine(_logPath, GetLogFileName()));
++					logStream.AutoFlush = true;
++					_logWriter = TextWriter.Synchronized(logStream);
++					LogMessage("Started as service");
++					_consoleOut = new StringBuilder();
++					Console.SetOut(new StringWriter(_consoleOut));
++					Console.SetError(new StringWriter(_consoleOut));
++					_outStream = new MemoryStream();
++					_sourceFiles = new Dictionary<string, byte[]>();
++					_referenceFiles = new Dictionary<string, byte[]>();
++					/*_sourceFiles["__internal__.cs"] = Encoding.Default.GetBytes("class __internal__{}");
++					new Driver(new CompilerContext(new CommandLineParser(Console.Out).ParseArguments(new[] { "__internal__.cs", "/noconfig", "/nostdlib", "/optimize", "/t:library" }), new StreamReportPrinter(Console.Out))).Compile();
++					FullCleanup();*/
++					var server = new ObjectStreamClient<CompilerMessage>(Console.OpenStandardInput(), Console.OpenStandardOutput());
++					server.Message += OnMessage;
++					server.Error += OnError;
++					server.Start();
++					LogMessage("Running as service");
++					int tries = 0, nextGC = 0;
++					while (!_exitReceived && (_shouldRun || _ready))
++					{
++						_shouldRun = !_ready && tries++ < 30; //wait 30 seconds for bootup
++						if (!_ready)
++							server.PushMessage(new CompilerMessage { Type = CompilerMessageType.Ready });
++						Thread.Sleep(1000);
++						if (nextGC++ < 30)
++							continue;
++						GCCleanup();
++						nextGC = 0;
++					}
++					server.Stop();
++					LogMessage("Shutdown");
++				}
++				catch (Exception e)
++				{
++					LogMessage("Error: " + e.Message + Environment.NewLine + e.StackTrace);
++				}
++				return 0;
++			}
++#endif
++
+ 			CommandLineParser cmd = new CommandLineParser (Console.Out);
+ 			var settings = cmd.ParseArguments (args);
+ 			if (settings == null)
+@@ -346,7 +592,7 @@ public bool Compile ()
+ 
+ #if STATIC
+ 			var importer = new StaticImporter (module);
+-			var references_loader = new StaticLoader (importer, ctx);
++			var references_loader = new StaticLoader (importer, ctx, _referenceFiles);
+ 
+ 			tr.Start (TimeReporter.TimerType.AssemblyBuilderSetup);
+ 			var assembly = new AssemblyDefinitionStatic (module, references_loader, output_file_name, output_file);
+@@ -435,7 +681,13 @@ public bool Compile ()
+ 			if (Report.Errors > 0)
+ 				return false;
+ 
+-			assembly.Save ();
++#if STATIC
++			if (_outStream != null)
++				_outStream.SetLength(0);
++			assembly.Save(_outStream);
++#else
++			assembly.Save();
++#endif
+ 
+ #if STATIC
+ 			references_loader.Dispose ();
+diff --git a/mcs/mcs/ikvm.cs b/mcs/mcs/ikvm.cs
+index 410104dfecdb..8e297b6040f6 100644
+--- a/mcs/mcs/ikvm.cs
++++ b/mcs/mcs/ikvm.cs
+@@ -237,6 +237,7 @@ class StaticLoader : AssemblyReferencesLoader<Assembly>, IDisposable
+ 		readonly Universe domain;
+ 		Assembly corlib;
+ 		readonly List<Tuple<AssemblyName, string, Assembly>> loaded_names;
++		readonly Dictionary<string, byte[]> referenceFiles;
+ 		static readonly Dictionary<string, string[]> sdk_directory;
+ 		Dictionary<AssemblyName, List<AssemblyReferenceMessageInfo>> resolved_version_mismatches;
+ 		static readonly TypeName objectTypeName = new TypeName ("System", "Object");
+@@ -259,11 +260,12 @@ static StaticLoader ()
+ 			sdk_directory.Add ("4.x", new string [] { "4.5", "net_4_x", "v4.0.30319" });
+ 		}
+ 
+-		public StaticLoader (StaticImporter importer, CompilerContext compiler)
++		public StaticLoader (StaticImporter importer, CompilerContext compiler, Dictionary<string, byte[]> referenceFiles)
+ 			: base (compiler)
+ 		{
+ 			this.importer = importer;
+-			domain = new Universe (UniverseOptions.MetadataOnly | UniverseOptions.ResolveMissingMembers | 
++			this.referenceFiles = referenceFiles;
++			domain = new Universe (UniverseOptions.MetadataOnly | UniverseOptions.ResolveMissingMembers |
+ 				UniverseOptions.DisableFusion | UniverseOptions.DecodeVersionInfoAttributeBlobs |
+ 				UniverseOptions.DeterministicOutput | UniverseOptions.DisableDefaultAssembliesLookup);
+ 			
+@@ -272,7 +274,7 @@ public StaticLoader (StaticImporter importer, CompilerContext compiler)
+ 
+ 			if (compiler.Settings.StdLib) {
+ 				var corlib_path = Path.GetDirectoryName (typeof (object).Assembly.Location);
+-				string fx_path = corlib_path.Substring (0, corlib_path.LastIndexOf (Path.DirectorySeparatorChar));
++				string fx_path = corlib_path.Length > 0 ? corlib_path.Substring (0, corlib_path.LastIndexOf (Path.DirectorySeparatorChar)) : string.Empty;
+ 
+ 				string sdk_path = null;
+ 
+@@ -479,7 +481,10 @@ public override Assembly LoadAssemblyFile (string fileName, bool isImplicitRefer
+ 				if (compiler.Settings.DebugFlags > 0)
+ 					Console.WriteLine ("Probing assembly location `{0}'", file);
+ 
+-				if (!File.Exists (file)) {
++				if (referenceFiles != null) {
++					if (!referenceFiles.ContainsKey(fileName))
++						continue;
++				} else if (!File.Exists (file)) {
+ 					if (!has_extension.HasValue)
+ 						has_extension = fileName.EndsWith (".dll", StringComparison.Ordinal) || fileName.EndsWith (".exe", StringComparison.Ordinal);
+ 
+@@ -492,7 +497,12 @@ public override Assembly LoadAssemblyFile (string fileName, bool isImplicitRefer
+ 				}
+ 
+ 				try {
+-					using (var stream = new FileStream (file, FileMode.Open, FileAccess.Read, FileShare.Read)) {
++					Stream stream;
++					if (referenceFiles != null)
++						stream = new MemoryStream(referenceFiles[fileName]);
++					else
++						stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
++					using (stream) {
+ 						using (RawModule module = domain.OpenRawModule (stream, file)) {
+ 							if (!module.IsManifestModule) {
+ 								Error_AssemblyIsModule (fileName);
+diff --git a/mcs/mcs/location.cs b/mcs/mcs/location.cs
+index 287aac0797a3..7d99b39f9906 100644
+--- a/mcs/mcs/location.cs
++++ b/mcs/mcs/location.cs
+@@ -236,6 +236,7 @@ public static void Reset ()
+ 		{
+ 			source_list = new List<SourceFile> ();
+ 			checkpoint_index = 0;
++			checkpoints = null;
+ 		}
+ 
+ 		public static void AddFile (SourceFile file)
+diff --git a/mcs/mcs/mcs.exe.sources b/mcs/mcs/mcs.exe.sources
+index b74a8fdac793..045c31cae81f 100644
+--- a/mcs/mcs/mcs.exe.sources
++++ b/mcs/mcs/mcs.exe.sources
+@@ -65,3 +65,8 @@ visit.cs
+ ../../external/ikvm/reflect/Writer/*.cs
+ ../../external/ikvm/reflect/Impl/ITypeOwner.cs
+ ../../external/ikvm/reflect/Impl/SymbolSupport.cs
++
++ObjectStream/Data/*.cs
++ObjectStream/IO/*.cs
++ObjectStream/Threading/*.cs
++ObjectStream/*.cs
