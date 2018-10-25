@@ -1,6 +1,4 @@
-From 80975f136fc655f04c9e935b9fc1faf416163554 Mon Sep 17 00:00:00 2001
 Date: Wed, 6 Jun 2018 22:49:05 -0400
-Subject: [PATCH] Add steaming compiler
 
 ---
  mcs/mcs/ObjectStream/Data/CompilerData.cs     |  27 ++
@@ -754,7 +752,7 @@ index 4db99f7e5fe7..866376e265a0 100644
 +#if STATIC
 +		private static string GetLogFileName()
 +		{
-+			return string.Format("compiler_{0:dd-MM-yyyy}.txt", DateTime.UtcNow);
++			return string.Format("compiler_{0:yyyy-MM-dd}.txt", DateTime.Now);
 +		}
 +
 +		public static void LogMessage(string message)
