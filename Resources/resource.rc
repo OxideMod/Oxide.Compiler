@@ -18,11 +18,11 @@ BEGIN
     BEGIN
         BLOCK "040904E4"
         BEGIN
-            VALUE "CompanyName",        "The uMod Project"
-            VALUE "FileDescription",    "Custom mono compiler bundle for use with uMod C# plugins - https://umod.org"
+            VALUE "CompanyName",        "Oxide Project"
+            VALUE "FileDescription",    "Custom mono compiler bundle for use with Oxide C# plugins - https://umod.org"
             VALUE "FileVersion",        "1.0.0.0"
             VALUE "InternalName",       "Compiler"
-            VALUE "LegalCopyright",     "Copyright (c) 2015-2018 The uMod Project Team and Contributors"
+            VALUE "LegalCopyright",     "Copyright (c) 2015-2022 Oxide Project Team and Contributors"
             VALUE "OriginalFilename",   "Compiler.exe"
             VALUE "ProductName",        "Compiler"
             VALUE "ProductVersion",     "1.0.0.0"

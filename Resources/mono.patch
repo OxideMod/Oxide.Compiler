@@ -1,4 +1,4 @@
-Date: Wed, 6 Jun 2018 22:49:05 -0400
+From 482c8160b3a1bb894791bdd0b562a653fe741448 Mon Sep 17 00:00:00 2001
 
 ---
  mcs/mcs/ObjectStream/Data/CompilerData.cs     |  27 ++
@@ -17,9 +17,9 @@ Date: Wed, 6 Jun 2018 22:49:05 -0400
  mcs/mcs/driver.cs                             | 258 +++++++++++++++++-
  mcs/mcs/ikvm.cs                               |  20 +-
  mcs/mcs/location.cs                           |   1 +
- mcs/mcs/mcs.csproj                            |   3 +-
+ mcs/mcs/mcs-simple.csproj                     |   5 +
  mcs/mcs/mcs.exe.sources                       |   5 +
- 18 files changed, 818 insertions(+), 11 deletions(-)
+ 18 files changed, 821 insertions(+), 10 deletions(-)
  create mode 100644 mcs/mcs/ObjectStream/Data/CompilerData.cs
  create mode 100644 mcs/mcs/ObjectStream/Data/CompilerFile.cs
  create mode 100644 mcs/mcs/ObjectStream/Data/CompilerLanguageVersion.cs
@@ -35,7 +35,7 @@ Date: Wed, 6 Jun 2018 22:49:05 -0400
 
 diff --git a/mcs/mcs/ObjectStream/Data/CompilerData.cs b/mcs/mcs/ObjectStream/Data/CompilerData.cs
 new file mode 100644
-index 000000000000..8b259b8a583f
+index 00000000000..8b259b8a583
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/Data/CompilerData.cs
 @@ -0,0 +1,27 @@
@@ -68,7 +68,7 @@ index 000000000000..8b259b8a583f
 +}
 diff --git a/mcs/mcs/ObjectStream/Data/CompilerFile.cs b/mcs/mcs/ObjectStream/Data/CompilerFile.cs
 new file mode 100644
-index 000000000000..d1342a973fdd
+index 00000000000..d1342a973fd
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/Data/CompilerFile.cs
 @@ -0,0 +1,11 @@
@@ -85,7 +85,7 @@ index 000000000000..d1342a973fdd
 +}
 diff --git a/mcs/mcs/ObjectStream/Data/CompilerLanguageVersion.cs b/mcs/mcs/ObjectStream/Data/CompilerLanguageVersion.cs
 new file mode 100644
-index 000000000000..a960fa90b7ef
+index 00000000000..a960fa90b7e
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/Data/CompilerLanguageVersion.cs
 @@ -0,0 +1,18 @@
@@ -109,7 +109,7 @@ index 000000000000..a960fa90b7ef
 +}
 diff --git a/mcs/mcs/ObjectStream/Data/CompilerMessage.cs b/mcs/mcs/ObjectStream/Data/CompilerMessage.cs
 new file mode 100644
-index 000000000000..0caaf7131822
+index 00000000000..0caaf713182
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/Data/CompilerMessage.cs
 @@ -0,0 +1,16 @@
@@ -131,7 +131,7 @@ index 000000000000..0caaf7131822
 +}
 diff --git a/mcs/mcs/ObjectStream/Data/CompilerMessageType.cs b/mcs/mcs/ObjectStream/Data/CompilerMessageType.cs
 new file mode 100644
-index 000000000000..e836dc14031f
+index 00000000000..e836dc14031
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/Data/CompilerMessageType.cs
 @@ -0,0 +1,14 @@
@@ -151,7 +151,7 @@ index 000000000000..e836dc14031f
 +}
 diff --git a/mcs/mcs/ObjectStream/Data/CompilerPlatform.cs b/mcs/mcs/ObjectStream/Data/CompilerPlatform.cs
 new file mode 100644
-index 000000000000..54c0b9840ec8
+index 00000000000..54c0b9840ec
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/Data/CompilerPlatform.cs
 @@ -0,0 +1,15 @@
@@ -172,7 +172,7 @@ index 000000000000..54c0b9840ec8
 +}
 diff --git a/mcs/mcs/ObjectStream/Data/CompilerTarget.cs b/mcs/mcs/ObjectStream/Data/CompilerTarget.cs
 new file mode 100644
-index 000000000000..cb20bfa39256
+index 00000000000..cb20bfa3925
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/Data/CompilerTarget.cs
 @@ -0,0 +1,10 @@
@@ -188,7 +188,7 @@ index 000000000000..cb20bfa39256
 +}
 diff --git a/mcs/mcs/ObjectStream/IO/BindChanger.cs b/mcs/mcs/ObjectStream/IO/BindChanger.cs
 new file mode 100644
-index 000000000000..2c91c0297bde
+index 00000000000..2c91c0297bd
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/IO/BindChanger.cs
 @@ -0,0 +1,22 @@
@@ -216,7 +216,7 @@ index 000000000000..2c91c0297bde
 +}
 diff --git a/mcs/mcs/ObjectStream/IO/ObjectStreamWrapper.cs b/mcs/mcs/ObjectStream/IO/ObjectStreamWrapper.cs
 new file mode 100644
-index 000000000000..395bf74c9c0e
+index 00000000000..395bf74c9c0
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/IO/ObjectStreamWrapper.cs
 @@ -0,0 +1,132 @@
@@ -354,7 +354,7 @@ index 000000000000..395bf74c9c0e
 +}
 diff --git a/mcs/mcs/ObjectStream/ObjectStreamClient.cs b/mcs/mcs/ObjectStream/ObjectStreamClient.cs
 new file mode 100644
-index 000000000000..998185ecf3d9
+index 00000000000..998185ecf3d
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/ObjectStreamClient.cs
 @@ -0,0 +1,94 @@
@@ -454,7 +454,7 @@ index 000000000000..998185ecf3d9
 +}
 diff --git a/mcs/mcs/ObjectStream/ObjectStreamConnection.cs b/mcs/mcs/ObjectStream/ObjectStreamConnection.cs
 new file mode 100644
-index 000000000000..1843dab27ee0
+index 00000000000..1843dab27ee
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/ObjectStreamConnection.cs
 @@ -0,0 +1,105 @@
@@ -565,7 +565,7 @@ index 000000000000..1843dab27ee0
 +}
 diff --git a/mcs/mcs/ObjectStream/Threading/Worker.cs b/mcs/mcs/ObjectStream/Threading/Worker.cs
 new file mode 100644
-index 000000000000..f0178c037746
+index 00000000000..f0178c03774
 --- /dev/null
 +++ b/mcs/mcs/ObjectStream/Threading/Worker.cs
 @@ -0,0 +1,68 @@
@@ -638,7 +638,7 @@ index 000000000000..f0178c037746
 +    internal delegate void WorkerExceptionEventHandler(Exception exception);
 +}
 diff --git a/mcs/mcs/assembly.cs b/mcs/mcs/assembly.cs
-index 96e43e70d999..ec12277a66a7 100644
+index 96e43e70d99..ec12277a66a 100644
 --- a/mcs/mcs/assembly.cs
 +++ b/mcs/mcs/assembly.cs
 @@ -883,7 +883,7 @@ public void EmbedResources ()
@@ -667,7 +667,7 @@ index 96e43e70d999..ec12277a66a7 100644
  			} catch (ArgumentOutOfRangeException) {
  				Report.Error (16, "Output file `{0}' exceeds the 4GB limit", name);
 diff --git a/mcs/mcs/driver.cs b/mcs/mcs/driver.cs
-index 4db99f7e5fe7..866376e265a0 100644
+index 4db99f7e5fe..72f3199b57c 100644
 --- a/mcs/mcs/driver.cs
 +++ b/mcs/mcs/driver.cs
 @@ -20,7 +20,12 @@
@@ -983,7 +983,7 @@ index 4db99f7e5fe7..866376e265a0 100644
  #if STATIC
  			references_loader.Dispose ();
 diff --git a/mcs/mcs/ikvm.cs b/mcs/mcs/ikvm.cs
-index 410104dfecdb..8e297b6040f6 100644
+index 1bd80e92aec..a0bdd0660ed 100644
 --- a/mcs/mcs/ikvm.cs
 +++ b/mcs/mcs/ikvm.cs
 @@ -237,6 +237,7 @@ class StaticLoader : AssemblyReferencesLoader<Assembly>, IDisposable
@@ -994,7 +994,7 @@ index 410104dfecdb..8e297b6040f6 100644
  		static readonly Dictionary<string, string[]> sdk_directory;
  		Dictionary<AssemblyName, List<AssemblyReferenceMessageInfo>> resolved_version_mismatches;
  		static readonly TypeName objectTypeName = new TypeName ("System", "Object");
-@@ -259,11 +260,12 @@ static StaticLoader ()
+@@ -261,11 +262,12 @@ static StaticLoader ()
  			sdk_directory.Add ("4.x", new string [] { "4.5", "net_4_x", "v4.0.30319" });
  		}
  
@@ -1009,7 +1009,7 @@ index 410104dfecdb..8e297b6040f6 100644
  				UniverseOptions.DisableFusion | UniverseOptions.DecodeVersionInfoAttributeBlobs |
  				UniverseOptions.DeterministicOutput | UniverseOptions.DisableDefaultAssembliesLookup);
  			
-@@ -272,7 +274,7 @@ public StaticLoader (StaticImporter importer, CompilerContext compiler)
+@@ -274,7 +276,7 @@ public StaticLoader (StaticImporter importer, CompilerContext compiler)
  
  			if (compiler.Settings.StdLib) {
  				var corlib_path = Path.GetDirectoryName (typeof (object).Assembly.Location);
@@ -1018,7 +1018,7 @@ index 410104dfecdb..8e297b6040f6 100644
  
  				string sdk_path = null;
  
-@@ -479,7 +481,10 @@ public override Assembly LoadAssemblyFile (string fileName, bool isImplicitRefer
+@@ -481,7 +483,10 @@ public override Assembly LoadAssemblyFile (string fileName, bool isImplicitRefer
  				if (compiler.Settings.DebugFlags > 0)
  					Console.WriteLine ("Probing assembly location `{0}'", file);
  
@@ -1030,7 +1030,7 @@ index 410104dfecdb..8e297b6040f6 100644
  					if (!has_extension.HasValue)
  						has_extension = fileName.EndsWith (".dll", StringComparison.Ordinal) || fileName.EndsWith (".exe", StringComparison.Ordinal);
  
-@@ -492,7 +497,12 @@ public override Assembly LoadAssemblyFile (string fileName, bool isImplicitRefer
+@@ -494,7 +499,12 @@ public override Assembly LoadAssemblyFile (string fileName, bool isImplicitRefer
  				}
  
  				try {
@@ -1045,7 +1045,7 @@ index 410104dfecdb..8e297b6040f6 100644
  							if (!module.IsManifestModule) {
  								Error_AssemblyIsModule (fileName);
 diff --git a/mcs/mcs/location.cs b/mcs/mcs/location.cs
-index 287aac0797a3..7d99b39f9906 100644
+index 287aac0797a..7d99b39f990 100644
 --- a/mcs/mcs/location.cs
 +++ b/mcs/mcs/location.cs
 @@ -236,6 +236,7 @@ public static void Reset ()
@@ -1056,26 +1056,31 @@ index 287aac0797a3..7d99b39f9906 100644
  		}
  
  		public static void AddFile (SourceFile file)
-diff --git a/mcs/mcs/mcs.csproj b/mcs/mcs/mcs.csproj
-index bf94aea3a249..c25cfcb31ed3 100644
---- a/mcs/mcs/mcs.csproj
-+++ b/mcs/mcs/mcs.csproj
-@@ -1,4 +1,4 @@
--﻿<?xml version="1.0" encoding="utf-8"?>
-+<?xml version="1.0" encoding="utf-8"?>
- <!-- WARNING: this file is autogenerated, don't modify it. Edit the .sources file of the corresponding assembly instead if you want to add/remove C# source files. -->
- <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-   <PropertyGroup>
-@@ -194,6 +194,7 @@
-     <Compile Include="typemanager.cs" />
+diff --git a/mcs/mcs/mcs-simple.csproj b/mcs/mcs/mcs-simple.csproj
+index e1136a1d161..81a2410b304 100644
+--- a/mcs/mcs/mcs-simple.csproj
++++ b/mcs/mcs/mcs-simple.csproj
+@@ -52,6 +52,10 @@
+     <WarningLevel>4</WarningLevel>
+     <Optimize>False</Optimize>
+   </PropertyGroup>
++  <PropertyGroup>
++    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
++    <TargetFrameworkMoniker>.NETFramework,Version=$(TargetFrameworkVersion)</TargetFrameworkMoniker>
++  </PropertyGroup>
+   <ItemGroup>
+     <Reference Include="System" />
+     <Reference Include="System.Xml" />
+@@ -158,6 +162,7 @@
      <Compile Include="typespec.cs" />
      <Compile Include="visit.cs" />
+     <Compile Include="tuples.cs" />
 +    <Compile Include="ObjectStream/**/*" />
-     <ProjectReference Include="$(SolutionDir)\msvc\scripts\genconsts.csproj">
-       <Name>genconsts</Name>
-       <Project>{702AE2C0-71DD-4112-9A06-E4FABCA59986}</Project>
+   </ItemGroup>
+   <ItemGroup Label="IKVM.Reflection">
+     <Compile Include="..\..\external\ikvm\reflect\*.cs">
 diff --git a/mcs/mcs/mcs.exe.sources b/mcs/mcs/mcs.exe.sources
-index b74a8fdac793..045c31cae81f 100644
+index b74a8fdac79..045c31cae81 100644
 --- a/mcs/mcs/mcs.exe.sources
 +++ b/mcs/mcs/mcs.exe.sources
 @@ -65,3 +65,8 @@ visit.cs
@@ -1087,3 +1092,6 @@ index b74a8fdac793..045c31cae81f 100644
 +ObjectStream/IO/*.cs
 +ObjectStream/Threading/*.cs
 +ObjectStream/*.cs
+-- 
+2.34.0.windows.1
+

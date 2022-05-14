@@ -1,8 +1,3 @@
-version: "{build}"
-
-# Do a shallow clone of the repo to speed up build
-clone_depth: 1
-
 # Install needed build dependencies
 before_build:
   # Download and install latest version of CYGWIN
@@ -11,7 +6,7 @@ before_build:
   - '%CYG_BASH% -lc "cygcheck -dc cygwin"'
   # Download and install the required version of Mono
   - ps: Start-FileDownload "http://download.mono-project.com/archive/4.4.0/windows-installer/mono-4.4.0.142-gtksharp-2.12.38-win32-0.msi" -FileName "mono.msi"
-  - ps: Start-FileDownload "https://github.com/activescott/lessmsi/releases/download/v1.6.1/lessmsi-v1.6.1.zip" -FileName "lessmsi.zip"
+  - ps: Start-FileDownload "https://github.com/activescott/lessmsi/releases/download/v1.10.0/lessmsi-v1.10.0.zip" -FileName "lessmsi.zip"
   - 7z e lessmsi.zip > NUL
   - lessmsi x mono.msi
   # Set environmental variables and add to PATH
@@ -21,7 +16,7 @@ before_build:
   - SET PKG_CONFIG_PATH=%MONO%/lib/pkgconfig
   - SET MACHINECONFIG=%MONO_WIN%\etc\mono\4.5\machine.config
   - SET PATH=%PATH%;%MONO%\bin
-  - SET SOURCE_FILES=%APPVEYOR_BUILD_FOLDER%\Resources\basic.exe %MONO_LIB%\mscorlib.dll %MONO_LIB%\System.dll %MONO_LIB%\System.Core.dll %MONO_LIB%\System.Xml.dll
+  - SET SOURCE_FILES=%APPVEYOR_BUILD_FOLDER%\Resources\mcs.exe %MONO_LIB%\mscorlib.dll %MONO_LIB%\System.dll %MONO_LIB%\System.Core.dll %MONO_LIB%\System.Xml.dll
 
 build_script:
   # Create temp files from source file and dependencies
@@ -35,19 +30,13 @@ build_script:
 
 on_success:
   # Download and unpack UPX for compression
-  - ps: Start-FileDownload "https://github.com/upx/upx/releases/download/v3.94/upx394w.zip" -FileName "upxw.zip"
+  - ps: Start-FileDownload "https://github.com/upx/upx/releases/download/v3.96/upx-3.96-win64.zip" -FileName "upxw.zip"
   - 7z e upxw.zip -aoa > NUL
   # Compress using UPX and compression level 9
   - upx.exe -q -9 Compiler.exe %MONO_WIN%/bin/mono-2.0.dll
 
 artifacts:
   - path: Compiler.exe
-
-notifications:
-  - provider: Email
-    on_build_success: false
-    on_build_failure: false
-    on_build_status_changed: false
 
 environment:
   global:
