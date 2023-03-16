@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Oxide.Compiler": {
+      "commandName": "Project",
+      "commandLineArgs": "Logging:FileName=compiler_debug.log\r\nLogging:Level=Debug\r\nCompiler:AllowUnsafe=true\r\nCompiler:UseStandardLibraries=false\r\nCompiler:Force=true\r\nCompiler:EnableMessageStream=true"
+    }
+  }
+}

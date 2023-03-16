@@ -1,0 +1,71 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+   <PropertyGroup>
+      <OutputType>Exe</OutputType>
+      <TargetFramework>net7.0</TargetFramework>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <Nullable>enable</Nullable>
+      <RootNamespace>Oxide.CompilerServices</RootNamespace>
+      <Title>Oxide Compiler</Title>
+      <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+      <SelfContained>true</SelfContained>
+      <PublishSingleFile>true</PublishSingleFile>
+      <PublishReadyToRun>true</PublishReadyToRun>
+      <ApplicationIcon>icon.ico</ApplicationIcon>
+      <SignAssembly>True</SignAssembly>
+      <AssemblyOriginatorKeyFile>..\sn.snk</AssemblyOriginatorKeyFile>
+      <Authors>austinv900</Authors>
+      <Company>Oxide Team and Contributors</Company>
+      <Description>.NET 7 Compiler for the OxideMod modding framework</Description>
+      <Copyright>(c) 2013-$([System.DateTime]::Now.Year) $(Company)</Copyright>
+      <PackageProjectUrl>https://github.com/OxideMod/Compiler</PackageProjectUrl>
+      <PackageIcon>icon.png</PackageIcon>
+      <RepositoryUrl>https://github.com/OxideMod/Compiler</RepositoryUrl>
+      <OutputDir>$(MSBuildThisFileDirectory)Artifacts\</OutputDir>
+   </PropertyGroup>
+   <ItemGroup>
+     <Compile Remove="Artifacts\**" />
+     <EmbeddedResource Remove="Artifacts\**" />
+     <None Remove="Artifacts\**" />
+   </ItemGroup>
+   <ItemGroup>
+      <Content Include="icon.ico" />
+   </ItemGroup>
+   <ItemGroup>
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.5.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic" Version="4.5.0" />
+      <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.4" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
+      <PackageReference Include="NLog.Extensions.Logging" Version="5.2.2" />
+      <PackageReference Include="Sentry.Extensions.Logging" Version="3.29.1" />
+   </ItemGroup>
+   <ItemGroup>
+      <ProjectReference Include="..\..\PolySharp\src\PolySharp.SourceGenerators\PolySharp.SourceGenerators.csproj" />
+      <ProjectReference Include="..\..\SingleFileExtractor\src\SingleFileExtractor.Core\SingleFileExtractor.Core.csproj" />
+   </ItemGroup>
+   <ItemGroup>
+      <None Update="icon.png">
+         <Pack>True</Pack>
+         <PackagePath>\</PackagePath>
+      </None>
+   </ItemGroup>
+	<Target Name="CopyArtifacts" AfterTargets="Publish">
+		<PropertyGroup>
+			<PublishOutput Condition="$(PublishDir.Contains('linux'))">$(MSBuildThisFileDirectory)$(PublishDir)Oxide.Compiler</PublishOutput>
+			<PublishOutput Condition="$(PublishDir.Contains('win'))">$(MSBuildThisFileDirectory)$(PublishDir)Oxide.Compiler.exe</PublishOutput>
+		</PropertyGroup>
+		<Copy Condition="$(PublishDir.Contains('linux-x64\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.x64-unix" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('linux-x64\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.min.x64-unix" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('win-x64\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.x64-win.exe" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('win-x64\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.min.x64-win.exe" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('win-x86\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.x86-win.exe" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('win-x86\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.min.x86-win.exe" SkipUnchangedFiles="true" />
+	</Target>
+</Project>

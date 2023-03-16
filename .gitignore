@@ -12,6 +12,10 @@ build/
 bld/
 x64/
 x86/
+[Aa]rtifacts/
+
+# Signing Keys
+*.snk
 
 # Build testing
 ## MSTest
