@@ -44,7 +44,8 @@ namespace Oxide.CompilerServices.CSharp
             try
             {
                 CompilerMessage message = await SafeCompile(data, new CompilerMessage() { Id = id, Type = CompilerMessageType.Assembly, Client = data.Message.Client }, csharp);
-                _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} ====", id);
+                if (((CompilationResult)message.Data).Data != null) _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Success ====", id);
+                else _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Failed ====", id);
                 message.Client!.PushMessage(message);
                 
             }
