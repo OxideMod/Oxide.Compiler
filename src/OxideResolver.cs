@@ -55,17 +55,17 @@ namespace Oxide.CompilerServices
                 return reference;
             }
 
-            FileEntry? entry = reader.Bundle.Files.FirstOrDefault(f => f.RelativePath.Equals(name));
+            FileInfo fileSystem = new FileInfo(Path.Combine(directories.Libraries, name));
 
-            if (entry != null)
+            if (fileSystem.Exists)
             {
-                logger.LogDebug(Events.Compile, "Found from embedded resource: [Size: {Size}] {Name}", entry.Size, entry.RelativePath);
-                reference = MetadataReference.CreateFromStream(entry.AsStream());
+                logger.LogDebug(Events.Compile, "Found from libraries directory: [Size: {Size}] {Name}", fileSystem.Length, fileSystem.Name);
+                reference = MetadataReference.CreateFromFile(fileSystem.FullName);
                 referenceCache.Add(reference);
                 return reference;
             }
 
-            FileInfo fileSystem = new(Path.Combine(runtimePath, name));
+            fileSystem = new(Path.Combine(runtimePath, name));
 
             if (fileSystem.Exists)
             {
@@ -75,12 +75,12 @@ namespace Oxide.CompilerServices
                 return reference;
             }
 
-            fileSystem = new FileInfo(Path.Combine(directories.Libraries, name));
+            FileEntry? entry = reader.Bundle.Files.FirstOrDefault(f => f.RelativePath.Equals(name));
 
-            if (fileSystem.Exists)
+            if (entry != null)
             {
-                logger.LogDebug(Events.Compile, "Found from libraries directory: [Size: {Size}] {Name}", fileSystem.Length, fileSystem.Name);
-                reference = MetadataReference.CreateFromFile(fileSystem.FullName);
+                logger.LogDebug(Events.Compile, "Found from embedded resource: [Size: {Size}] {Name}", entry.Size, entry.RelativePath);
+                reference = MetadataReference.CreateFromStream(entry.AsStream());
                 referenceCache.Add(reference);
                 return reference;
             }
