@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Oxide.CompilerServices.Logging;
 using Oxide.CompilerServices.Settings;
 using SingleFileExtractor.Core;
@@ -18,11 +17,11 @@ namespace Oxide.CompilerServices
 
         private readonly HashSet<PortableExecutableReference> referenceCache;
 
-        public OxideResolver(ILogger<OxideResolver> logger, IOptions<DirectorySettings> settings)
+        public OxideResolver(ILogger<OxideResolver> logger, OxideSettings settings)
         {
             this.logger = logger;
-            directories = settings.Value;
-            runtimePath = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory();
+            directories = settings.Path;
+            runtimePath = settings.Compiler.FrameworkPath;
             reader = new ExecutableReader(Process.GetCurrentProcess().MainModule!.FileName);
             referenceCache = new HashSet<PortableExecutableReference>();
         }
@@ -53,6 +52,11 @@ namespace Oxide.CompilerServices
             if (reference != null)
             {
                 return reference;
+            }
+
+            if (name.Equals("System.Private.CoreLib"))
+            {
+                name = "mscorlib.dll";
             }
 
             FileInfo fileSystem = new FileInfo(Path.Combine(directories.Libraries, name));

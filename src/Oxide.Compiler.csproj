@@ -61,11 +61,11 @@
 			<PublishOutput Condition="$(PublishDir.Contains('linux'))">$(MSBuildThisFileDirectory)$(PublishDir)Oxide.Compiler</PublishOutput>
 			<PublishOutput Condition="$(PublishDir.Contains('win'))">$(MSBuildThisFileDirectory)$(PublishDir)Oxide.Compiler.exe</PublishOutput>
 		</PropertyGroup>
-		<Copy Condition="$(PublishDir.Contains('linux-x64\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.x64-unix" SkipUnchangedFiles="true" />
-		<Copy Condition="$(PublishDir.Contains('linux-x64\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.min.x64-unix" SkipUnchangedFiles="true" />
-		<Copy Condition="$(PublishDir.Contains('win-x64\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.x64-win.exe" SkipUnchangedFiles="true" />
-		<Copy Condition="$(PublishDir.Contains('win-x64\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.min.x64-win.exe" SkipUnchangedFiles="true" />
-		<Copy Condition="$(PublishDir.Contains('win-x86\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.x86-win.exe" SkipUnchangedFiles="true" />
-		<Copy Condition="$(PublishDir.Contains('win-x86\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Oxide.Compiler.min.x86-win.exe" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('linux-x64\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.x64-unix" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('linux-x64\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.min.x64-unix" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('win-x64\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.x64-win.exe" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('win-x64\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.min.x64-win.exe" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('win-x86\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.x86-win.exe" SkipUnchangedFiles="true" />
+		<Copy Condition="$(PublishDir.Contains('win-x86\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.min.x86-win.exe" SkipUnchangedFiles="true" />
 	</Target>
 </Project>
