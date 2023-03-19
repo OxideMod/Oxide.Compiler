@@ -21,50 +21,18 @@ namespace Oxide.CompilerServices
         public static void Main(string[] args) => new ApplicationBuilder()
             .WithConfiguration((config) => config.AddCommandLine(args, new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
             {
-                ["-log"] = "Logging:FileName",
-                ["--logfile"] = "Logging:FileName",
+                ["-l:file"]     = "Logging:FileName",
+                ["-v"]          = "Logging:Level",
+                ["--logging"]   = "Logging",
+                ["--verbose"]   = "Logging:Level",
 
-                ["-ll"] = "Logging:Level",
-                ["--loglevel"] = "Logging:Level",
+                ["-unsafe"]     = "Compiler:AllowUnsafe",
+                ["-std"]        = "Compiler:UseStandardLibraries",
+                ["-ms"]         = "Compiler:EnableMessageStream",
+                ["--setting"]   = "Compiler",
 
-
-                ["-std"] = "Compiler:UseStandardLibraries",
-                ["--standard-libraries"] = "Compiler:UseStandardLibraries",
-
-                ["-u"] = "Compiler:AllowUnsafe",
-                ["--unsafe"] = "Compiler:AllowUnsafe",
-
-                ["-fp"] = "Compiler:FrameworkPath",
-                ["--framewor-path"] = "Compiler:FrameworkPath",
-
-                ["-f"] = "Compiler:Force",
-                ["--force-compile"] = "Compiler:Force",
-
-                ["-m"] = "Compiler:EnableMessageStream",
-                ["--enable-messages"] = "Compiler:EnableMessageStream",
-
-
-                ["-cd"] = "Path:Root",
-                ["--root-path"] = "Path:Root",
-
-                ["-cp"] = "Path:Configuration",
-                ["--configuration-path"] = "Path:Configuration",
-
-                ["-lp"] = "Path:Logging",
-                ["--logging-path"] = "Path:Logging",
-
-                ["-dp"] = "Path:Data",
-                ["--data-path"] = "Path:Data",
-
-                ["-pp"] = "Path:Plugins",
-                ["--plugin-path"] = "Path:Plugins",
-
-                ["-glibs"] = "Path:Libraries",
-                ["--game-libraries"] = "Path:Libraries",
-
-
-                ["-e"] = "DefaultEncoding",
-                ["--encoding"] = "DefaultEncoding",
+                ["--path"]      = "Path",
+                ["--parent"]    = "MainProcess"
             })
             .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "oxide.compiler.json"), true)
             .AddEnvironmentVariables("OXIDE:"), (c, s) =>

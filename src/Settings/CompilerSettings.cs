@@ -6,7 +6,7 @@
 
         public bool UseStandardLibraries { get; set; } = false;
 
-        public string FrameworkPath { get; set; } = AppContext.BaseDirectory;
+        public string FrameworkPath { get; set; } = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory();
 
         public bool Force { get; set; } = false;
 
