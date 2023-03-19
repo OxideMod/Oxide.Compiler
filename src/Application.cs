@@ -10,6 +10,7 @@ using SingleFileExtractor.Core;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Text.Json;
 
 namespace Oxide.CompilerServices
 {
@@ -35,13 +36,19 @@ namespace Oxide.CompilerServices
             {
                 objectStream = new ObjectStreamClient<CompilerMessage>(Console.OpenStandardInput(), Console.OpenStandardOutput());
                 objectStream.Message += (s, m) => OnMessage(m);
-            }    
+            }
         }
 
         public void Start()
         {
             AppDomain.CurrentDomain.ProcessExit += (sender, e) => Exit("SIGTERM");
             Console.CancelKeyPress += (s, o) => Exit("SIGINT (Ctrl + C)");
+
+            if (settings.ParentProcess != null)
+            {
+                settings.ParentProcess.Exited += (s, o) => Exit("parent process shutdown");
+                logger.LogInformation(Events.Startup, "Watching parent process ([{id}] {name}) for shutdown", settings.ParentProcess.Id, settings.ParentProcess.ProcessName);
+            }
 
             if (!settings.Compiler.EnableMessageStream)
             {
@@ -153,7 +160,6 @@ namespace Oxide.CompilerServices
         private async void Worker()
         {
             CancellationToken token = tokenSource.Token;
-
             while (!token.IsCancellationRequested)
             {
                 CompilerMessage message;
@@ -198,7 +204,6 @@ namespace Oxide.CompilerServices
             file.Layout = "(${time})[${level}] ${logger:shortName=true}[${event-properties:item=EventId}]: ${message}${onexception:inner= ${newline}${exception:format=ToString,Data}}";
             file.AutoFlush = true;
             file.CreateDirs = true;
-            file.DeleteOldFileOnStartup = true;
             file.Encoding = settings.DefaultEncoding;
             NLog.LogLevel level = settings.Logging.Level switch
             {

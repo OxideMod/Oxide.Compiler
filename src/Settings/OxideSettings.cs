@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using System.Diagnostics;
 using System.Text;
 
 namespace Oxide.CompilerServices.Settings
@@ -14,12 +15,25 @@ namespace Oxide.CompilerServices.Settings
 
         public DirectorySettings Path { get; }
 
+        public int ProcessId { get; }
+
+        public Process? ParentProcess { get; }
+
         public OxideSettings(IConfigurationRoot root, IOptions<CompilerSettings> compiler, IOptions<LogSettings> logging, IOptions<DirectorySettings> dirctory)
         {
             DefaultEncoding = Encoding.GetEncoding(root.GetValue("DefaultEncoding", Encoding.UTF8.WebName) ?? Encoding.UTF8.WebName);
             Compiler = compiler.Value;
             Logging = logging.Value;
             Path = dirctory.Value;
+
+            try
+            {
+                ParentProcess = Process.GetProcessById(root.GetValue<int>("MainProcess"));
+                ProcessId = ParentProcess.Id;
+            }
+            catch (Exception)
+            {
+            }
         }
     }
 }
