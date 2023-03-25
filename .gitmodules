@@ -1,0 +1,6 @@
+[submodule "PolySharp"]
+	path = PolySharp
+	url = git@github.com:Sergio0694/PolySharp.git
+[submodule "SingleFileExtractor"]
+	path = SingleFileExtractor
+	url = git@github.com:Droppers/SingleFileExtractor.git

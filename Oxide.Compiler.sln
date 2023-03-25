@@ -5,9 +5,9 @@ VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oxide.Compiler", "src\Oxide.Compiler.csproj", "{A24BDCBE-15A8-465D-B934-71F2B31E7E17}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SingleFileExtractor.Core", "..\SingleFileExtractor\src\SingleFileExtractor.Core\SingleFileExtractor.Core.csproj", "{175F3832-62FE-4050-BED4-811F6D4D04C6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PolySharp.SourceGenerators", "PolySharp\src\PolySharp.SourceGenerators\PolySharp.SourceGenerators.csproj", "{B678B920-FA6D-40F2-B423-DC486175B894}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PolySharp.SourceGenerators", "..\PolySharp\src\PolySharp.SourceGenerators\PolySharp.SourceGenerators.csproj", "{47367AE8-6714-429E-9D09-C31EE9FF9716}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SingleFileExtractor.Core", "SingleFileExtractor\src\SingleFileExtractor.Core\SingleFileExtractor.Core.csproj", "{94F82F7A-43C7-4119-A270-20B38626E502}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +19,14 @@ Global
 		{A24BDCBE-15A8-465D-B934-71F2B31E7E17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A24BDCBE-15A8-465D-B934-71F2B31E7E17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A24BDCBE-15A8-465D-B934-71F2B31E7E17}.Release|Any CPU.Build.0 = Release|Any CPU
-		{175F3832-62FE-4050-BED4-811F6D4D04C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{175F3832-62FE-4050-BED4-811F6D4D04C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{175F3832-62FE-4050-BED4-811F6D4D04C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{175F3832-62FE-4050-BED4-811F6D4D04C6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{47367AE8-6714-429E-9D09-C31EE9FF9716}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{47367AE8-6714-429E-9D09-C31EE9FF9716}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{47367AE8-6714-429E-9D09-C31EE9FF9716}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{47367AE8-6714-429E-9D09-C31EE9FF9716}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B678B920-FA6D-40F2-B423-DC486175B894}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B678B920-FA6D-40F2-B423-DC486175B894}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B678B920-FA6D-40F2-B423-DC486175B894}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B678B920-FA6D-40F2-B423-DC486175B894}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94F82F7A-43C7-4119-A270-20B38626E502}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94F82F7A-43C7-4119-A270-20B38626E502}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94F82F7A-43C7-4119-A270-20B38626E502}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94F82F7A-43C7-4119-A270-20B38626E502}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
