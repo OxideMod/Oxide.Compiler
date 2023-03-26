@@ -1,7 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using NLog;
-using Oxide.CompilerServices;
-using System.Net;
+﻿using System.Net;
 using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
@@ -98,7 +95,6 @@ namespace ObjectStream.IO
             {
                 sum += count;
             }
-
             using MemoryStream memoryStream = new(data);
 #pragma warning disable SYSLIB0011 // Type or member is obsolete
             return (TRead)_binaryFormatter.Deserialize(memoryStream);

@@ -3,13 +3,12 @@
       <OutputType>Exe</OutputType>
       <TargetFramework>net7.0</TargetFramework>
       <ImplicitUsings>enable</ImplicitUsings>
-      <Nullable>enable</Nullable>
+      <Nullable>disable</Nullable>
       <RootNamespace>Oxide.CompilerServices</RootNamespace>
       <Title>Oxide Compiler</Title>
       <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
       <SelfContained>true</SelfContained>
       <PublishSingleFile>true</PublishSingleFile>
-      <PublishReadyToRun>true</PublishReadyToRun>
       <ApplicationIcon>icon.ico</ApplicationIcon>
       <Authors>Oxide Team and Contributors</Authors>
       <Company>OxideMod</Company>
@@ -18,13 +17,10 @@
       <PackageProjectUrl>https://github.com/OxideMod/Compiler</PackageProjectUrl>
       <PackageIcon>icon.png</PackageIcon>
       <RepositoryUrl>https://github.com/OxideMod/Compiler</RepositoryUrl>
-      <OutputDir>$(MSBuildThisFileDirectory)Artifacts\</OutputDir>
+      <AssemblyVersion Condition="'$(GITHUB_RUN_NUMBER)' != ''">1.0.2.$(GITHUB_RUN_NUMBER)</AssemblyVersion>
+      <FileVersion>$(AssemblyVersion)</FileVersion>
+      <Version>$(AssemblyVersion.Substring(0, 5))</Version>
    </PropertyGroup>
-   <ItemGroup>
-     <Compile Remove="Artifacts\**" />
-     <EmbeddedResource Remove="Artifacts\**" />
-     <None Remove="Artifacts\**" />
-   </ItemGroup>
    <ItemGroup>
       <Content Include="icon.ico" />
    </ItemGroup>
@@ -54,16 +50,4 @@
          <PackagePath>\</PackagePath>
       </None>
    </ItemGroup>
-	<Target Name="CopyArtifacts" AfterTargets="Publish">
-		<PropertyGroup>
-			<PublishOutput Condition="$(PublishDir.Contains('linux'))">$(MSBuildThisFileDirectory)$(PublishDir)Oxide.Compiler</PublishOutput>
-			<PublishOutput Condition="$(PublishDir.Contains('win'))">$(MSBuildThisFileDirectory)$(PublishDir)Oxide.Compiler.exe</PublishOutput>
-		</PropertyGroup>
-		<Copy Condition="$(PublishDir.Contains('linux-x64\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.x64-unix" SkipUnchangedFiles="true" />
-		<Copy Condition="$(PublishDir.Contains('linux-x64\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.min.x64-unix" SkipUnchangedFiles="true" />
-		<Copy Condition="$(PublishDir.Contains('win-x64\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.x64-win.exe" SkipUnchangedFiles="true" />
-		<Copy Condition="$(PublishDir.Contains('win-x64\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.min.x64-win.exe" SkipUnchangedFiles="true" />
-		<Copy Condition="$(PublishDir.Contains('win-x86\packed'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.x86-win.exe" SkipUnchangedFiles="true" />
-		<Copy Condition="$(PublishDir.Contains('win-x86\min'))" SourceFiles="$(PublishOutput)" DestinationFiles="$(OutputDir)Compiler.min.x86-win.exe" SkipUnchangedFiles="true" />
-	</Target>
 </Project>

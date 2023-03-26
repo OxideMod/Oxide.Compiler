@@ -9,7 +9,7 @@ using Oxide.CompilerServices.Settings;
 using Sentry;
 using System.Collections.Immutable;
 using System.Text;
-using PolySharp.SourceGenerators;
+// using PolySharp.SourceGenerators;
 
 namespace Oxide.CompilerServices.CSharp
 {
@@ -44,7 +44,7 @@ namespace Oxide.CompilerServices.CSharp
             try
             {
                 CompilerMessage message = await SafeCompile(data, new CompilerMessage() { Id = id, Type = CompilerMessageType.Assembly, Client = data.Message.Client }, csharp);
-                if (((CompilationResult)message.Data).Data != null) _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Success ====", id);
+                if (((CompilationResult)message.Data).Data.Length > 0) _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Success ====", id);
                 else _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Failed ====", id);
                 message.Client!.PushMessage(message);
                 
@@ -131,21 +131,21 @@ namespace Oxide.CompilerServices.CSharp
             CSharpCompilationOptions compOptions = new(data.OutputKind(), metadataReferenceResolver: resolver, platform: data.Platform(), allowUnsafe: true, optimizationLevel: data.Debug ? OptimizationLevel.Debug : OptimizationLevel.Release);
             CSharpCompilation comp = CSharpCompilation.Create(Path.GetRandomFileName(), trees.Values, references.Values, compOptions);
 
-            PolyfillsGenerator generator = new();
-            ISourceGenerator sourceGen = generator.AsSourceGenerator();
+            //PolyfillsGenerator generator = new();
+            //ISourceGenerator sourceGen = generator.AsSourceGenerator();
 
-            GeneratorDriver driver = CSharpGeneratorDriver.Create(generators: new ISourceGenerator[] { sourceGen }
-            , driverOptions: new GeneratorDriverOptions(default, trackIncrementalGeneratorSteps: true));
-            driver = driver.WithUpdatedParseOptions(options);
+            //GeneratorDriver driver = CSharpGeneratorDriver.Create(generators: new ISourceGenerator[] { sourceGen }
+            //, driverOptions: new GeneratorDriverOptions(default, trackIncrementalGeneratorSteps: true));
+            //driver = driver.WithUpdatedParseOptions(options);
 
-            driver = driver.RunGenerators(comp, _token);
-            GeneratorDriverRunResult genResult = driver.GetRunResult();
+            //driver = driver.RunGenerators(comp, _token);
+            //GeneratorDriverRunResult genResult = driver.GetRunResult();
 
-            if (genResult.GeneratedTrees.Length > 0)
-            {
-                _logger.LogInformation(Events.Compile, "Adding compiler generated classes: {classes}", string.Join(", ", genResult.GeneratedTrees.Select(t => Path.GetFileName(t.FilePath))));
-                comp = comp.AddSyntaxTrees(genResult.GeneratedTrees);
-            }
+            //if (genResult.GeneratedTrees.Length > 0)
+            //{
+            //    _logger.LogInformation(Events.Compile, "Adding compiler generated classes: {classes}", string.Join(", ", genResult.GeneratedTrees.Select(t => Path.GetFileName(t.FilePath))));
+            //    comp = comp.AddSyntaxTrees(genResult.GeneratedTrees);
+            //}
 
             ISpan emit = current.StartChild("compile-csharp-emit", "Emitting the assembly");
 
@@ -163,20 +163,18 @@ namespace Oxide.CompilerServices.CSharp
             return message;
         }
 
-        private CompilationResult? CompileProject(CSharpCompilation compilation, CompilerMessage message)
+        private CompilationResult CompileProject(CSharpCompilation compilation, CompilerMessage message)
         {
             using MemoryStream pe = new();
-            using MemoryStream pdb = new();
+            //using MemoryStream pdb = new();
 
-            EmitResult result = compilation.Emit(pe, pdb, cancellationToken: _token);
-
+            EmitResult result = compilation.Emit(pe, cancellationToken: _token);
             if (result.Success)
             {
                 CompilationResult data = new()
                 {
-                    Name = compilation.AssemblyName!,
-                    Data = pe.ToArray(),
-                    Symbols = pdb.ToArray()
+                    Name = compilation.AssemblyName,
+                    Data = pe.ToArray()
                 };
                 message.Data = data;
                 return data;
@@ -207,6 +205,10 @@ namespace Oxide.CompilerServices.CSharp
                         message.ExtraData += $"[Error][{diag.Id}][{fileName}] {diag.GetMessage()} | Line: {line}, Pos: {charPos} {Environment.NewLine}";
                         modified = true;
                     }
+                }
+                else
+                {
+                    _logger.LogError(Events.Compile, $"[Error][{diag.Id}] {diag.GetMessage()}");
                 }
             }
 
