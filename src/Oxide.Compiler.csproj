@@ -11,10 +11,8 @@
       <PublishSingleFile>true</PublishSingleFile>
       <PublishReadyToRun>true</PublishReadyToRun>
       <ApplicationIcon>icon.ico</ApplicationIcon>
-      <SignAssembly>True</SignAssembly>
-      <AssemblyOriginatorKeyFile>..\sn.snk</AssemblyOriginatorKeyFile>
-      <Authors>austinv900</Authors>
-      <Company>Oxide Team and Contributors</Company>
+      <Authors>Oxide Team and Contributors</Authors>
+      <Company>OxideMod</Company>
       <Description>.NET 7 Compiler for the OxideMod modding framework</Description>
       <Copyright>(c) 2013-$([System.DateTime]::Now.Year) $(Company)</Copyright>
       <PackageProjectUrl>https://github.com/OxideMod/Compiler</PackageProjectUrl>

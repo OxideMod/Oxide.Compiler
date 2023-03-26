@@ -1,16 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using ObjectStream;
 using ObjectStream.Data;
 using Oxide.CompilerServices.Logging;
 using Oxide.CompilerServices.Settings;
 using Sentry;
-using SingleFileExtractor.Core;
-using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.Loader;
-using System.Text.Json;
 
 namespace Oxide.CompilerServices
 {
@@ -46,8 +40,23 @@ namespace Oxide.CompilerServices
 
             if (settings.ParentProcess != null)
             {
-                settings.ParentProcess.Exited += (s, o) => Exit("parent process shutdown");
-                logger.LogInformation(Events.Startup, "Watching parent process ([{id}] {name}) for shutdown", settings.ParentProcess.Id, settings.ParentProcess.ProcessName);
+                try
+                {
+                    if (!settings.ParentProcess.HasExited)
+                    {
+                        settings.ParentProcess.Exited += (s, o) => Exit("parent process shutdown");
+                        logger.LogInformation(Events.Startup, "Watching parent process ([{id}] {name}) for shutdown", settings.ParentProcess.Id, settings.ParentProcess.ProcessName);
+                    }
+                    else
+                    {
+                        Exit("parent process exited");
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(Events.Startup, ex, "Failed to attach to parent process, compiler may stay open if parent is improperly shutdown");
+                }
             }
 
             if (!settings.Compiler.EnableMessageStream)
