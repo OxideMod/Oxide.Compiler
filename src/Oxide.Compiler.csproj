@@ -17,7 +17,7 @@
       <PackageProjectUrl>https://github.com/OxideMod/Compiler</PackageProjectUrl>
       <PackageIcon>icon.png</PackageIcon>
       <RepositoryUrl>https://github.com/OxideMod/Compiler</RepositoryUrl>
-      <AssemblyVersion Condition="'$(GITHUB_RUN_NUMBER)' != ''">1.0.0.$(GITHUB_RUN_NUMBER)</AssemblyVersion>
+      <AssemblyVersion Condition="'$(GITHUB_RUN_NUMBER)' != ''">1.0.$(GITHUB_RUN_NUMBER)</AssemblyVersion>
       <FileVersion>$(AssemblyVersion)</FileVersion>
       <Version>$(AssemblyVersion.Substring(0, 5))</Version>
    </PropertyGroup>
