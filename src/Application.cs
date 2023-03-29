@@ -44,6 +44,7 @@ namespace Oxide.CompilerServices
                 {
                     if (!settings.ParentProcess.HasExited)
                     {
+                        settings.ParentProcess.EnableRaisingEvents = true;
                         settings.ParentProcess.Exited += (s, o) => Exit("parent process shutdown");
                         logger.LogInformation(Events.Startup, "Watching parent process ([{id}] {name}) for shutdown", settings.ParentProcess.Id, settings.ParentProcess.ProcessName);
                     }
