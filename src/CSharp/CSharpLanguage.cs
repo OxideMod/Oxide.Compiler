@@ -103,7 +103,7 @@ namespace Oxide.CompilerServices.CSharp
                                 _logger.LogDebug(Events.Compile, "Adding project reference: {ref}", fileName);
                             }
 
-                            references[fileName] = File.Exists(reference.Name) ? MetadataReference.CreateFromFile(reference.Name) : MetadataReference.CreateFromImage(reference.Data, filePath: reference.Name);
+                            references[fileName] = File.Exists(reference.Name) && (reference.Data == null || reference.Data.Length == 0)  ? MetadataReference.CreateFromFile(reference.Name) : MetadataReference.CreateFromImage(reference.Data, filePath: reference.Name);
                             continue;
 
                         default:
