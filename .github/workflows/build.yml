@@ -1,51 +1,57 @@
 name: Build
-
-on: [ push, pull_request, workflow_dispatch ]
-
+on:
+  workflow_call:
+    inputs:
+      branch-postfix:
+        required: false
+        type: string
+env:
+  BUILD: ${{ inputs.branch-postfix == 'master' && 'Release' || 'Debug' }}
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
-
       - uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '7.0.x'
-
+          dotnet-version: 7.0.x
       - name: Build Executables
         shell: pwsh
-        run: |
-          dotnet publish --nologo -c Release -r win-x64
-          dotnet publish --nologo -c Release -r win-x86
-          dotnet publish --nologo -c Release -r osx-x64
-          dotnet publish --nologo -c Release -r linux-x64
+        run: >
+          dotnet publish --nologo -c $env:BUILD -r win-x64
+
+          dotnet publish --nologo -c $env:BUILD -r win-x86
+
+          dotnet publish --nologo -c $env:BUILD -r osx-x64
+
+          dotnet publish --nologo -c $env:BUILD -r linux-x64
+
           $artifactPath = Join-Path (Get-Location) 'artifacts'
+
           if (!(Test-Path $artifactPath))
+
           {
               New-Item $artifactPath -ItemType Directory -Force
           }
-          $startPath = Join-Path (Get-Location) 'src' 'bin' 'Release' 'net7.0'
-          Copy-Item (Join-Path $startPath 'win-x64' 'publish' 'Oxide.Compiler.exe') (Join-Path $artifactPath 'win-x64.Compiler.exe') -Force
-          Copy-Item (Join-Path $startPath 'win-x86' 'publish' 'Oxide.Compiler.exe') (Join-Path $artifactPath 'win-x86.Compiler.exe') -Force
-          Copy-Item (Join-Path $startPath 'linux-x64' 'publish' 'Oxide.Compiler') (Join-Path $artifactPath 'linux-x64.Compiler') -Force
-          Copy-Item (Join-Path $startPath 'osx-x64' 'publish' 'Oxide.Compiler') (Join-Path $artifactPath 'osx-x64.Compiler') -Force
 
+          $startPath = Join-Path (Get-Location) 'src' 'bin' $env:BUILD 'net7.0'
+
+          Copy-Item (Join-Path $startPath 'win-x64' 'publish' 'Oxide.Compiler.exe') (Join-Path $artifactPath 'win-x64.Compiler.exe') -Force
+
+          Copy-Item (Join-Path $startPath 'win-x86' 'publish' 'Oxide.Compiler.exe') (Join-Path $artifactPath 'win-x86.Compiler.exe') -Force
+
+          Copy-Item (Join-Path $startPath 'linux-x64' 'publish' 'Oxide.Compiler') (Join-Path $artifactPath 'linux-x64.Compiler') -Force
+
+          Copy-Item (Join-Path $startPath 'osx-x64' 'publish' 'Oxide.Compiler') (Join-Path $artifactPath 'osx-x64.Compiler') -Force
+      - name: Generate MD5
+        run: >
+          Get-ChildItem -Path 'artifacts' | ForEach-Object { (Get-FileHash
+          $_.FullName -Algorithm MD5).Hash.ToLower() | Out-File -FilePath "$(
+          $_.FullName ).md5" }
       - name: Publish Artifacts
         uses: actions/upload-artifact@v3
-        if: ${{ success() }}
         with:
-          name: bundle
+          name: oxide-compiler
           path: artifacts/
-
-      - name: Deploy To cdn.oxidemod.cloud
-        if: github.event_name == 'push'
-        shell: pwsh
-        run: |
-          Install-Module -Name AWS.Tools.Installer -Force
-          Install-AWSToolsModule AWS.Tools.S3 -Force
-          Set-AWSCredential -AccessKey ${{ secrets.AWS_KEY }} -SecretKey ${{ secrets.AWS_SECRET }}
-          Write-S3Object -BucketName cdn.oxidemod.cloud -Folder (Join-Path (Get-Location) 'artifacts') -KeyPrefix compiler -Force -PublicReadOnly -Region us-west-2
-          Write-Output 'All files written to cloud cdn'

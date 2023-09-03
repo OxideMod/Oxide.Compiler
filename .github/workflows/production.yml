@@ -1,0 +1,34 @@
+name: Deploy to Cloadflare R2
+on:
+  push:
+    branches:
+      - master
+      - staging
+      - develop
+      - roslyn
+jobs:
+  build:
+    name: Run Build
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      branch-postfix: ${{ github.ref_name }}
+  deploy:
+    name: Deploy to R2
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: oxide-compiler
+          path: artifacts
+      - name: Deploy to Cloadflare R2
+        run: >
+          aws s3 sync artifacts s3://oxide-downloads/artifacts/compiler/${{
+          github.ref_name }} --endpoint-url ${{ secrets.CLOUDFLARE_R2_ENDPOINT
+          }}  --acl public-read
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET }}
+          AWS_DEFAULT_REGION: auto
