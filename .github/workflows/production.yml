@@ -21,14 +21,19 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v3
         with:
-          name: oxide-compiler
+          name: ${{ github.event.repository.name }}
           path: artifacts
       - name: Generate Checksum Files
+        shell: pwsh
         run: |
-          Get-ChildItem -Path 'artifacts' | ForEach-Object { (Get-FileHash $_.FullName -Algorithm MD5).Hash.ToLower() | Out-File -FilePath "$($_.FullName).md5" -NoNewLine }
+          Get-ChildItem -Path 'artifacts' | ForEach-Object { 
+              $md5 = (Get-FileHash $_.FullName -Algorithm MD5).Hash.ToLower()
+              $data = [System.Text.Encoding]::UTF8.GetBytes($md5)
+              [System.IO.File]::WriteAllBytes("$( $_.FullName ).md5", $data)
+          }
       - name: Deploy to Cloadflare R2
         run: |
-          aws s3 sync artifacts s3://oxide-downloads/artifacts/compiler/${{ github.ref_name }} --endpoint-url ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          aws s3 sync artifacts s3://oxide-downloads/artifacts/${{ github.event.repository.name }}/${{ github.ref_name }} --endpoint-url ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET }}
