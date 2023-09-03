@@ -19,38 +19,22 @@ jobs:
           dotnet-version: 7.0.x
       - name: Build Executables
         shell: pwsh
-        run: >
+        run: |
           dotnet publish --nologo -c $env:BUILD -r win-x64
-
           dotnet publish --nologo -c $env:BUILD -r win-x86
-
           dotnet publish --nologo -c $env:BUILD -r osx-x64
-
           dotnet publish --nologo -c $env:BUILD -r linux-x64
-
           $artifactPath = Join-Path (Get-Location) 'artifacts'
-
           if (!(Test-Path $artifactPath))
-
           {
               New-Item $artifactPath -ItemType Directory -Force
           }
-
           $startPath = Join-Path (Get-Location) 'src' 'bin' $env:BUILD 'net7.0'
-
           Copy-Item (Join-Path $startPath 'win-x64' 'publish' 'Oxide.Compiler.exe') (Join-Path $artifactPath 'win-x64.Compiler.exe') -Force
-
           Copy-Item (Join-Path $startPath 'win-x86' 'publish' 'Oxide.Compiler.exe') (Join-Path $artifactPath 'win-x86.Compiler.exe') -Force
-
           Copy-Item (Join-Path $startPath 'linux-x64' 'publish' 'Oxide.Compiler') (Join-Path $artifactPath 'linux-x64.Compiler') -Force
-
           Copy-Item (Join-Path $startPath 'osx-x64' 'publish' 'Oxide.Compiler') (Join-Path $artifactPath 'osx-x64.Compiler') -Force
-      - name: Generate MD5
-        run: >
-          Get-ChildItem -Path 'artifacts' | ForEach-Object { (Get-FileHash
-          $_.FullName -Algorithm MD5).Hash.ToLower() | Out-File -FilePath "$(
-          $_.FullName ).md5" }
-      - name: Publish Artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: oxide-compiler

@@ -23,11 +23,12 @@ jobs:
         with:
           name: oxide-compiler
           path: artifacts
+      - name: Generate Checksum Files
+        run: |
+          Get-ChildItem -Path 'artifacts' | ForEach-Object { (Get-FileHash $_.FullName -Algorithm MD5).Hash.ToLower() | Out-File -FilePath "$($_.FullName).md5" -NoNewLine }
       - name: Deploy to Cloadflare R2
-        run: >
-          aws s3 sync artifacts s3://oxide-downloads/artifacts/compiler/${{
-          github.ref_name }} --endpoint-url ${{ secrets.CLOUDFLARE_R2_ENDPOINT
-          }}  --acl public-read
+        run: |
+          aws s3 sync artifacts s3://oxide-downloads/artifacts/compiler/${{ github.ref_name }} --endpoint-url ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET }}
