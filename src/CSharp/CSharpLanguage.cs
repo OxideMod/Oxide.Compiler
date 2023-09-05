@@ -47,7 +47,7 @@ namespace Oxide.CompilerServices.CSharp
                 if (((CompilationResult)message.Data).Data.Length > 0) _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Success ====", id);
                 else _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Failed ====", id);
                 message.Client!.PushMessage(message);
-                
+
             }
             catch (Exception e)
             {
@@ -67,7 +67,7 @@ namespace Oxide.CompilerServices.CSharp
             if (data.SourceFiles == null || data.SourceFiles.Length == 0) throw new ArgumentException("No source files provided", nameof(data.SourceFiles));
             OxideResolver resolver = (OxideResolver)_services.GetRequiredService<MetadataReferenceResolver>();
             _logger.LogDebug(Events.Compile, GetJobStructure(data));
-            
+
             Dictionary<string, MetadataReference> references = new(StringComparer.OrdinalIgnoreCase);
 
             if (data.StdLib)
@@ -127,7 +127,7 @@ namespace Oxide.CompilerServices.CSharp
                 _logger.LogDebug(Events.Compile, "Added C# file {file} to the project", fileName);
             }
             sources.Finish();
-            
+
             CSharpCompilationOptions compOptions = new(data.OutputKind(), metadataReferenceResolver: resolver, platform: data.Platform(), allowUnsafe: true, optimizationLevel: data.Debug ? OptimizationLevel.Debug : OptimizationLevel.Release);
             CSharpCompilation comp = CSharpCompilation.Create(Path.GetRandomFileName(), trees.Values, references.Values, compOptions);
 
@@ -203,7 +203,12 @@ namespace Oxide.CompilerServices.CSharp
                         _logger.LogWarning(Events.Compile, "Failed to compile {tree} - {message} (L: {line} | P: {pos}) | Removing from project", fileName, diag.GetMessage(), line, charPos);
                         compilation = compilation.RemoveSyntaxTrees(tree);
                         message.ExtraData += $"[Error][{diag.Id}][{fileName}] {diag.GetMessage()} | Line: {line}, Pos: {charPos} {Environment.NewLine}";
-                        modified = true;
+
+                        if (compilation.SyntaxTrees.Length > 0)
+                        {
+                            _logger.LogWarning(Events.Compile, $"Removed {fileName} from project, retrying compilation");
+                            return CompileProject(compilation, message);
+                        }
                     }
                 }
                 else
@@ -212,10 +217,6 @@ namespace Oxide.CompilerServices.CSharp
                 }
             }
 
-            if (modified && compilation.SyntaxTrees.Length > 0)
-            {
-                return CompileProject(compilation, message);
-            }
 
 
             CompilationResult r = new()
