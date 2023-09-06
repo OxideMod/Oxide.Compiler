@@ -156,7 +156,10 @@ namespace Oxide.CompilerServices
                     lock (compilerQueue)
                     {
                         message.Client = objectStream;
-                        ((CompilerData)message.Data).Message = message;
+                        CompilerData data = (CompilerData)message.Data;
+                        data.Message = message;
+                        data.SourceFiles = data.SourceFiles.OrderBy(f => f.Name).ToArray();
+                        data.ReferenceFiles = data.ReferenceFiles.OrderBy(f => f.Name).ToArray();
                         compilerQueue.Enqueue(message);
                     }
                     break;
