@@ -2,16 +2,14 @@
 using Microsoft.Extensions.Logging;
 using Oxide.CompilerServices.Logging;
 using Oxide.CompilerServices.Settings;
-using SingleFileExtractor.Core;
 using System.Collections.Immutable;
 using System.Diagnostics;
 
 namespace Oxide.CompilerServices
 {
-    internal class OxideResolver : MetadataReferenceResolver, IDisposable
+    internal class OxideResolver : MetadataReferenceResolver
     {
         private readonly ILogger logger;
-        private readonly ExecutableReader reader;
         private readonly DirectorySettings directories;
         private readonly string runtimePath;
 
@@ -22,7 +20,6 @@ namespace Oxide.CompilerServices
             this.logger = logger;
             directories = settings.Path;
             runtimePath = settings.Compiler.FrameworkPath;
-            reader = new ExecutableReader(Process.GetCurrentProcess().MainModule!.FileName);
             referenceCache = new HashSet<PortableExecutableReference>();
         }
 
@@ -79,35 +76,7 @@ namespace Oxide.CompilerServices
                 return reference;
             }
 
-            FileEntry? entry = reader.Bundle.Files.FirstOrDefault(f => f.RelativePath.Equals(name));
-
-            if (entry != null)
-            {
-                logger.LogDebug(Events.Compile, "Found from embedded resource: [Size: {Size}] {Name}", entry.Size, entry.RelativePath);
-                reference = MetadataReference.CreateFromStream(entry.AsStream());
-                referenceCache.Add(reference);
-                return reference;
-            }
-
             logger.LogDebug(Events.Compile, "Missing assembly definition {name}", name);
-            return null;
-        }
-
-        public void Dispose()
-        {
-            reader.Dispose();
-        }
-
-        public static PortableExecutableReference? ResolveFromManifest(string name)
-        {
-            using var reader = new ExecutableReader(Process.GetCurrentProcess().MainModule!.FileName);
-            FileEntry? entry = reader.Bundle.Files.FirstOrDefault(f => f.RelativePath.Equals(name));
-
-            if (entry != null)
-            {
-                return MetadataReference.CreateFromStream(entry.AsStream(), filePath: entry.RelativePath);
-            }
-
             return null;
         }
     }

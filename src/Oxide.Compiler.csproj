@@ -40,7 +40,6 @@
    </ItemGroup>
    <ItemGroup>
      <ProjectReference Include="..\PolySharp\src\PolySharp.SourceGenerators\PolySharp.SourceGenerators.csproj" />
-     <ProjectReference Include="..\SingleFileExtractor\src\SingleFileExtractor.Core\SingleFileExtractor.Core.csproj" />
    </ItemGroup>
    <ItemGroup>
       <None Update="icon.png">

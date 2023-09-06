@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
 using ObjectStream.Data;
-using SingleFileExtractor.Core;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -83,24 +82,6 @@ namespace Oxide.CompilerServices
                 if (File.Exists(path)) return MetadataReference.CreateFromFile(path);
             }
 
-            Process process = Process.GetCurrentProcess();
-            if (process.MainModule != null)
-            {
-                using ExecutableReader reader = new(process.MainModule.FileName);
-                if (!reader.IsSingleFile)
-                {
-                    return null;
-                }
-
-                foreach (FileEntry entry in reader.Bundle.Files)
-                {
-                    if (entry.RelativePath.Equals(assemblyName))
-                    {
-                        return MetadataReference.CreateFromStream(entry.AsStream());
-                    }
-                }
-            }
-
             return null;
         }
 
@@ -123,7 +104,7 @@ namespace Oxide.CompilerServices
         }
 
         public static PortableExecutableReference? ToReference(this Type type) => ToReference(type.Assembly);
-       
+
         public static Task<PortableExecutableReference?> ToReference(this Type type, CancellationToken token = default) => Task.Run(() => ToReference(type), token);
 
         public static Task<PortableExecutableReference?> ToReference(this Assembly assembly, CancellationToken token = default) => Task.Run(() => ToReference(assembly), token);
