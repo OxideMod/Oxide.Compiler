@@ -18,11 +18,7 @@ namespace Oxide.CompilerServices
         public const bool DEBUG = false;
 #endif
 
-        public static void Main(string[] args)
-        {
-            Environment.SetEnvironmentVariable("DOTNET_SYSTEM_GLOBALIZATION_INVARIANT", "1");
-
-            new ApplicationBuilder()
+        public static void Main(string[] args) => new ApplicationBuilder()
             .WithConfiguration((config) => config.AddCommandLine(args, new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
             {
                 ["-l:file"]     = "Logging:FileName",
@@ -81,6 +77,5 @@ namespace Oxide.CompilerServices
             .AddTransient<MetadataReferenceResolver, OxideResolver>())
             .Build()
             .Start();
-        }
     }
 }

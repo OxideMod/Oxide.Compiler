@@ -18,6 +18,7 @@
       <PackageProjectUrl>https://github.com/OxideMod/Oxide.Compiler</PackageProjectUrl>
       <PackageIcon>icon.png</PackageIcon>
       <RepositoryUrl>https://github.com/OxideMod/Oxide.Compiler</RepositoryUrl>
+      <InvariantGlobalization>true</InvariantGlobalization>
    </PropertyGroup>
    <ItemGroup>
       <Content Include="icon.ico" />
