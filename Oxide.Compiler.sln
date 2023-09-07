@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oxide.Compiler", "src\Oxide
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PolySharp.SourceGenerators", "PolySharp\src\PolySharp.SourceGenerators\PolySharp.SourceGenerators.csproj", "{B678B920-FA6D-40F2-B423-DC486175B894}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SingleFileExtractor.Core", "SingleFileExtractor\src\SingleFileExtractor.Core\SingleFileExtractor.Core.csproj", "{94F82F7A-43C7-4119-A270-20B38626E502}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{B678B920-FA6D-40F2-B423-DC486175B894}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B678B920-FA6D-40F2-B423-DC486175B894}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B678B920-FA6D-40F2-B423-DC486175B894}.Release|Any CPU.Build.0 = Release|Any CPU
-		{94F82F7A-43C7-4119-A270-20B38626E502}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{94F82F7A-43C7-4119-A270-20B38626E502}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{94F82F7A-43C7-4119-A270-20B38626E502}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{94F82F7A-43C7-4119-A270-20B38626E502}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
