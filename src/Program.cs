@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -48,15 +48,6 @@ namespace Oxide.CompilerServices
             })
             .WithLogging((logging, cfg) =>
             {
-                logging.AddSentry(options =>
-                {
-                    options.Dsn = "https://a76ae35214e14b6784cec747a47648bc@o4504825216303104.ingest.sentry.io/4504825233801216";
-                    options.Debug = false;
-                    options.TracesSampleRate = 1.0;
-                    options.DecompressionMethods = System.Net.DecompressionMethods.All;
-                    options.DetectStartupTime = Sentry.StartupTimeDetectionMode.Best;
-                    options.ReportAssembliesMode = Sentry.ReportAssembliesMode.InformationalVersion;
-                });
                 LoggingConfiguration config = new();
                 logging.AddNLog(config, new()
                 {

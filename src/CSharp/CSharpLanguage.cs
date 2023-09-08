@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,7 +7,6 @@ using ObjectStream.Data;
 using Oxide.CompilerServices.Logging;
 using Oxide.CompilerServices.Settings;
 using PolySharp.SourceGenerators;
-using Sentry;
 using System.Collections.Immutable;
 using System.Text;
 
@@ -39,11 +38,10 @@ namespace Oxide.CompilerServices.CSharp
 
         public async Task Compile(int id, CompilerData data)
         {
-            ISpan csharp = data.LogTransaction.StartChild("compile-csharp", "Compilation of a CSharp project");
             _logger.LogInformation(Events.Compile, "====== Compilation Job {id} ======", id);
             try
             {
-                CompilerMessage message = await SafeCompile(data, new CompilerMessage() { Id = id, Type = CompilerMessageType.Assembly, Client = data.Message.Client }, csharp);
+                CompilerMessage message = await SafeCompile(data, new CompilerMessage() { Id = id, Type = CompilerMessageType.Assembly, Client = data.Message.Client });
                 if (((CompilationResult)message.Data).Data.Length > 0) _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Success ====", id);
                 else _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Failed ====", id);
                 message.Client!.PushMessage(message);
@@ -51,17 +49,13 @@ namespace Oxide.CompilerServices.CSharp
             }
             catch (Exception e)
             {
-                ISpan span = csharp.StartChild("compile-csharp-error", "Compilation threw a error");
                 _logger.LogError(Events.Compile, e, "==== Compilation Error {id} ====", id);
                 data.Message.Client!.PushMessage(new CompilerMessage() { Id = id, Type = CompilerMessageType.Error, Data = e });
-                span.Finish(e);
             }
-            csharp.Finish();
         }
 
-        private async Task<CompilerMessage> SafeCompile(CompilerData data, CompilerMessage message, ISpan logSpan)
+        private async Task<CompilerMessage> SafeCompile(CompilerData data, CompilerMessage message)
         {
-            ISpan current = logSpan;
             if (data == null) throw new ArgumentNullException(nameof(data), "Missing compile data");
 
             if (data.SourceFiles == null || data.SourceFiles.Length == 0) throw new ArgumentException("No source files provided", nameof(data.SourceFiles));
@@ -72,7 +66,6 @@ namespace Oxide.CompilerServices.CSharp
 
             if (data.StdLib)
             {
-                ISpan std = current.StartChild("compile-csharp-stdlib", "Add standard library references");
                 references.Add("System.Private.CoreLib.dll", resolver.Reference("System.Private.CoreLib.dll")!);
                 references.Add("netstandard.dll", resolver.Reference("netstandard.dll")!);
                 references.Add("System.Runtime.dll", resolver.Reference("System.Runtime.dll")!);
@@ -80,12 +73,10 @@ namespace Oxide.CompilerServices.CSharp
                 references.Add("System.Collections.Immutable.dll", resolver.Reference("System.Collections.Immutable.dll")!);
                 references.Add("System.Linq.dll", resolver.Reference("System.Linq.dll")!);
                 references.Add("System.Data.Common.dll", resolver.Reference("System.Data.Common.dll")!);
-                std.Finish();
             }
 
             if (data.ReferenceFiles != null && data.ReferenceFiles.Length > 0)
             {
-                ISpan projRefs = current.StartChild("compile-csharp-references", "Add project references");
                 foreach (var reference in data.ReferenceFiles)
                 {
                     string fileName = Path.GetFileName(reference.Name);
@@ -111,14 +102,12 @@ namespace Oxide.CompilerServices.CSharp
                             continue;
                     }
                 }
-                projRefs.Finish();
             }
 
             Dictionary<CompilerFile, SyntaxTree> trees = new();
             Encoding encoding = Encoding.GetEncoding(data.Encoding);
             CSharpParseOptions options = new(data.CSharpVersion());
             _logger.LogDebug(Events.Compile, "Parsing source files using C# {version} with encoding {encoding}", data.CSharpVersion(), encoding.WebName);
-            ISpan sources = current.StartChild("compile-csharp-sources", "Add project source files");
             foreach (var source in data.SourceFiles)
             {
                 string fileName = Path.GetFileName(source.Name);
@@ -126,7 +115,6 @@ namespace Oxide.CompilerServices.CSharp
                 trees.Add(source, tree);
                 _logger.LogDebug(Events.Compile, "Added C# file {file} to the project", fileName);
             }
-            sources.Finish();
 
             CSharpCompilationOptions compOptions = new(data.OutputKind(), metadataReferenceResolver: resolver, platform: data.Platform(), allowUnsafe: true, optimizationLevel: data.Debug ? OptimizationLevel.Debug : OptimizationLevel.Release);
             CSharpCompilation comp = CSharpCompilation.Create(Path.GetRandomFileName(), trees.Values, references.Values, compOptions);
@@ -147,19 +135,7 @@ namespace Oxide.CompilerServices.CSharp
                 comp = comp.AddSyntaxTrees(genResult.GeneratedTrees);
             }
 
-            ISpan emit = current.StartChild("compile-csharp-emit", "Emitting the assembly");
-
             CompilationResult? payload = CompileProject(comp, message);
-
-            if (payload != null)
-            {
-                emit.SetExtra("Success", true);
-            }
-            else
-            {
-                emit.SetExtra("Success", false);
-            }
-            emit.Finish();
             return message;
         }
 

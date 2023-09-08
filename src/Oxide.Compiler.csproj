@@ -37,7 +37,6 @@
       <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
       <PackageReference Include="NLog.Extensions.Logging" Version="5.2.2" />
-      <PackageReference Include="Sentry.Extensions.Logging" Version="3.29.1" />
    </ItemGroup>
    <ItemGroup>
      <ProjectReference Include="..\PolySharp\src\PolySharp.SourceGenerators\PolySharp.SourceGenerators.csproj" />

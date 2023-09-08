@@ -1,5 +1,3 @@
-﻿using Sentry;
-
 namespace ObjectStream.Data
 {
     [Serializable]
@@ -31,8 +29,5 @@ namespace ObjectStream.Data
 
         [NonSerialized]
         public CompilerMessage Message;
-
-        [NonSerialized]
-        public ITransaction LogTransaction;
     }
 }

@@ -1,10 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ObjectStream;
 using ObjectStream.Data;
 using Oxide.CompilerServices.Logging;
 using Oxide.CompilerServices.Settings;
-using Sentry;
 
 namespace Oxide.CompilerServices
 {
@@ -186,13 +185,10 @@ namespace Oxide.CompilerServices
                     message = compilerQueue.Dequeue();
                 }
 
-                ITransaction transaction = SentrySdk.StartTransaction("Compile", "compile", "Compilation of project");
                 CompilerData data = (CompilerData)message.Data;
-                data.LogTransaction = transaction;
                 ICompilerService compiler = Services.GetRequiredService<ICompilerService>();
                 logger.LogDebug(Events.Compile, "Starting compile job {id}", message.Id);
                 await compiler.Compile(message.Id, data);
-                transaction.Finish();
             }
         }
 

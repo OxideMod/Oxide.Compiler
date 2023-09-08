@@ -1,6 +1,5 @@
-﻿using ObjectStream.IO;
+using ObjectStream.IO;
 using ObjectStream.Threading;
-using Sentry;
 
 namespace ObjectStream
 {
@@ -57,24 +56,18 @@ namespace ObjectStream
 
         private void ReadStream()
         {
-            ITransaction transaction = SentrySdk.StartTransaction("Stream", "ReadMessages");
             while (_streamWrapper.CanRead)
             {
-                ISpan child = transaction.StartChild("ReadMessage");
                 TRead obj = _streamWrapper.ReadObject();
                 ReceiveMessage?.Invoke(this, obj);
-                child.SetExtra("ReadSuccess", obj != null);
                 if (obj != null)
                 {
-                    child.Finish();
                     continue;
                 }
 
                 CloseImpl();
-                child.Finish();
                 break;
             }
-            transaction.Finish();
         }
 
         private void WriteStream()
@@ -82,13 +75,11 @@ namespace ObjectStream
             while (_streamWrapper.CanWrite)
             {
                 _writeSignal.WaitOne();
-                ITransaction transaction = SentrySdk.StartTransaction("Stream", "WriteObjectQueue");
                 while (_writeQueue.Count > 0)
                 {
 
                     _streamWrapper.WriteObject(_writeQueue.Dequeue());
                 }
-                transaction.Finish();
             }
         }
     }
