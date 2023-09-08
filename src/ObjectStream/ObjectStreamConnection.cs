@@ -1,4 +1,4 @@
-using ObjectStream.IO;
+﻿using ObjectStream.IO;
 using ObjectStream.Threading;
 
 namespace ObjectStream

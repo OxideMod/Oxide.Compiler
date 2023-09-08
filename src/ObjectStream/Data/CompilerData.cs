@@ -1,4 +1,4 @@
-namespace ObjectStream.Data
+﻿namespace ObjectStream.Data
 {
     [Serializable]
     public class CompilerData

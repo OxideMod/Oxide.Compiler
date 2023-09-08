@@ -10,6 +10,7 @@
       <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
       <SelfContained>true</SelfContained>
       <PublishSingleFile>true</PublishSingleFile>
+      <PublishReadyToRun>true</PublishReadyToRun>
       <ApplicationIcon>icon.ico</ApplicationIcon>
       <Authors>Oxide Team and Contributors</Authors>
       <Company>OxideMod</Company>

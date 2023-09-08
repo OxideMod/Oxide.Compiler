@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -35,7 +35,7 @@ namespace Oxide.CompilerServices
                 ["--parent"]    = "MainProcess"
             })
             .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "oxide.compiler.json"), true)
-            .AddEnvironmentVariables("OXIDE:"), (c, s) =>
+            .AddEnvironmentVariables("Oxide:"), (c, s) =>
             {
                 s.Configure<LogSettings>(c.GetSection("Logging"))
                 .AddScoped(cfg => cfg.GetRequiredService<IOptions<LogSettings>>().Value);

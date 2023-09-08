@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using ObjectStream.Data;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
