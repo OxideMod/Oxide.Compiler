@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using ObjectStream.Data;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -49,21 +49,6 @@ namespace Oxide.CompilerServices
                 CompilerLanguageVersion.V2 => Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp2,
                 CompilerLanguageVersion.V1 => Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp1,
                 _ => Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest,
-            };
-        }
-
-        public static Microsoft.CodeAnalysis.VisualBasic.LanguageVersion VisualBasicVersion(this CompilerData data)
-        {
-            return data.Version switch
-            {
-                CompilerLanguageVersion.Latest => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.Latest,
-                CompilerLanguageVersion.V16 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic16_9,
-                CompilerLanguageVersion.V15 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic15_5,
-                CompilerLanguageVersion.V14 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic14,
-                CompilerLanguageVersion.V13 or CompilerLanguageVersion.V12 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic12,
-                CompilerLanguageVersion.V11 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic11,
-                CompilerLanguageVersion.V10 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic10,
-                _ => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic9,
             };
         }
 
