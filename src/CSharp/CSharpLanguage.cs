@@ -47,7 +47,7 @@ namespace Oxide.CompilerServices.CSharp
                 if (((CompilationResult)message.Data).Data.Length > 0) _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Success ====", id);
                 else _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Failed ====", id);
                 message.Client!.PushMessage(message);
-
+                
             }
             catch (Exception e)
             {
@@ -63,7 +63,7 @@ namespace Oxide.CompilerServices.CSharp
             if (data.SourceFiles == null || data.SourceFiles.Length == 0) throw new ArgumentException("No source files provided", nameof(data.SourceFiles));
             OxideResolver resolver = (OxideResolver)_services.GetRequiredService<MetadataReferenceResolver>();
             _logger.LogDebug(Events.Compile, GetJobStructure(data));
-
+            
             Dictionary<string, MetadataReference> references = new(StringComparer.OrdinalIgnoreCase);
 
             if (data.StdLib)
