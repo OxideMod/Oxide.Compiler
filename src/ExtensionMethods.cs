@@ -52,6 +52,21 @@ namespace Oxide.CompilerServices
             };
         }
 
+        public static Microsoft.CodeAnalysis.VisualBasic.LanguageVersion VisualBasicVersion(this CompilerData data)
+        {
+            return data.Version switch
+            {
+                CompilerLanguageVersion.Latest => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.Latest,
+                CompilerLanguageVersion.V16 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic16_9,
+                CompilerLanguageVersion.V15 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic15_5,
+                CompilerLanguageVersion.V14 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic14,
+                CompilerLanguageVersion.V13 or CompilerLanguageVersion.V12 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic12,
+                CompilerLanguageVersion.V11 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic11,
+                CompilerLanguageVersion.V10 => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic10,
+                _ => Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.VisualBasic9,
+            };
+        }
+
         public static PortableExecutableReference? ResolveToReference(this ICompilerService? compiler, string assemblyName)
         {
             if (string.IsNullOrWhiteSpace(assemblyName)) throw new ArgumentNullException(nameof(assemblyName));
