@@ -3,11 +3,33 @@ using ObjectStream.Data;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 
 namespace Oxide.CompilerServices
 {
     public static class ExtensionMethods
     {
+        public static Serilog.Events.LogEventLevel ToSerilog(this LogLevel level)
+        {
+            switch (level)
+            {
+                case LogLevel.Trace:
+                    return Serilog.Events.LogEventLevel.Verbose;
+                case LogLevel.Debug:
+                    return Serilog.Events.LogEventLevel.Debug;
+                case LogLevel.Information:
+                    return Serilog.Events.LogEventLevel.Information;
+                case LogLevel.Warning:
+                    return Serilog.Events.LogEventLevel.Warning;
+                case LogLevel.Error:
+                    return Serilog.Events.LogEventLevel.Error;
+                case LogLevel.Critical:
+                    return Serilog.Events.LogEventLevel.Fatal;
+                default:
+                    return Serilog.Events.LogEventLevel.Information;
+            }
+        }
+
         public static Platform Platform(this CompilerData data)
         {
             return data.Platform switch

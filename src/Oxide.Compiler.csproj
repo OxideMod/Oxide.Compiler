@@ -36,9 +36,8 @@
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
       <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
-      <PackageReference Include="NLog.Extensions.Logging" Version="5.2.2" />
-   </ItemGroup>
-   <ItemGroup>
+      <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
+      <PackageReference Include="Serilog.Sinks.File" Version="5.0.1-dev-00947" />
    </ItemGroup>
    <ItemGroup>
       <None Update="icon.png">

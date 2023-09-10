@@ -3,18 +3,21 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NLog.Config;
-using NLog.Extensions.Logging;
 using Oxide.CompilerServices.CSharp;
 using Oxide.CompilerServices.Settings;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 
 namespace Oxide.CompilerServices
 {
     internal class Program
     {
 #if DEBUG
+        public static LoggingLevelSwitch ApplicationLogLevel { get; } = new(LogEventLevel.Debug);
         public const bool DEBUG = true;
 #else
+        public static LoggingLevelSwitch ApplicationLogLevel { get; } = new(LogEventLevel.Information);
         public const bool DEBUG = false;
 #endif
 
@@ -48,17 +51,21 @@ namespace Oxide.CompilerServices
             })
             .WithLogging((logging, cfg) =>
             {
-                LoggingConfiguration config = new();
-                logging.AddNLog(config, new()
-                {
-                    AutoShutdown = true,
-                    LoggingConfigurationSectionName = "Logging"
-                });
-
+                IConfigurationSection logSettings = cfg.GetSection("Logging");
+                Log.Logger = new LoggerConfiguration()
+                    .MinimumLevel.ControlledBy(ApplicationLogLevel)
+                    .Enrich.FromLogContext()
+                    .WriteTo.File(logSettings.GetValue<string>("FileName", "compiler.log"),
+                        rollOnFileSizeLimit: true,
+                        fileSizeLimitBytes: (long)5e+6,
+                        retainedFileCountLimit: 5,
+                        shared: true)
+                    .CreateLogger();
+                logging.AddSerilog(null, true);
 #if DEBUG
                 logging.AddDebug();
 #endif
-                if (cfg != null && !cfg.GetSection("Compiler").GetValue("EnableMessageStream", false))
+                if (!cfg.GetSection("Compiler").GetValue("EnableMessageStream", false))
                 {
                     logging.AddSimpleConsole();
                 }
