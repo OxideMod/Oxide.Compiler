@@ -1,51 +1,60 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Globalization;
+using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ObjectStream;
 using ObjectStream.Data;
 using Oxide.CompilerServices.Logging;
 using Oxide.CompilerServices.Settings;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Oxide.CompilerServices
 {
     internal sealed class Application
     {
-        public IServiceProvider Services { get; }
-        public ILogger logger { get; }
-        private OxideSettings settings { get; }
-        private ObjectStreamClient<CompilerMessage>? objectStream { get; }
-        private CancellationTokenSource tokenSource { get; }
-        private Queue<CompilerMessage> compilerQueue { get; }
+        private IServiceProvider Services { get; }
+        private ILogger Logger { get; }
+        private OxideSettings Settings { get; }
+        private ObjectStreamClient<CompilerMessage>? ObjectStream { get; }
+        private CancellationTokenSource TokenSource { get; }
+        private Queue<CompilerMessage> CompilerQueue { get; }
+
+        private Task WorkerTask { get; set; }
 
         public Application(IServiceProvider provider, ILogger<Application> logger, OxideSettings options, CancellationTokenSource tk)
         {
-            tokenSource = tk;
-            this.logger = logger;
-            settings = options;
+            Program.ApplicationLogLevel.MinimumLevel = options.Logging.Level.ToSerilog();
+            TokenSource = tk;
+            this.Logger = logger;
+            Settings = options;
             Services = provider;
-            compilerQueue = new Queue<CompilerMessage>();
-            ConfigureLogging(options);
+            CompilerQueue = new Queue<CompilerMessage>();
 
-            if (options.Compiler.EnableMessageStream)
-            {
-                objectStream = new ObjectStreamClient<CompilerMessage>(Console.OpenStandardInput(), Console.OpenStandardOutput());
-                objectStream.Message += (s, m) => OnMessage(m);
-            }
+            if (!options.Compiler.EnableMessageStream) return;
+
+            ObjectStream = new ObjectStreamClient<CompilerMessage>(Console.OpenStandardInput(), Console.OpenStandardOutput());
+            ObjectStream.Message += (s, m) => OnMessage(m);
         }
 
         public void Start()
         {
+            Logger.LogInformation(Events.Startup, $"Starting compiler v{Assembly.GetExecutingAssembly().GetName().Version}. . .");
+            Logger.LogInformation(Events.Startup, $"Minimal logging level is set to {Program.ApplicationLogLevel.MinimumLevel}");
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+            Thread.CurrentThread.IsBackground = true;
             AppDomain.CurrentDomain.ProcessExit += (sender, e) => Exit("SIGTERM");
             Console.CancelKeyPress += (s, o) => Exit("SIGINT (Ctrl + C)");
 
-            if (settings.ParentProcess != null)
+            if (Settings.ParentProcess != null)
             {
                 try
                 {
-                    if (!settings.ParentProcess.HasExited)
+                    if (!Settings.ParentProcess.HasExited)
                     {
-                        settings.ParentProcess.EnableRaisingEvents = true;
-                        settings.ParentProcess.Exited += (s, o) => Exit("parent process shutdown");
-                        logger.LogInformation(Events.Startup, "Watching parent process ([{id}] {name}) for shutdown", settings.ParentProcess.Id, settings.ParentProcess.ProcessName);
+                        Settings.ParentProcess.EnableRaisingEvents = true;
+                        Settings.ParentProcess.Exited += (s, o) => Exit("parent process shutdown");
+                        Logger.LogInformation(Events.Startup, "Watching parent process ([{id}] {name}) for shutdown", Settings.ParentProcess.Id, Settings.ParentProcess.ProcessName);
                     }
                     else
                     {
@@ -55,111 +64,48 @@ namespace Oxide.CompilerServices
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(Events.Startup, ex, "Failed to attach to parent process, compiler may stay open if parent is improperly shutdown");
+                    Logger.LogWarning(Events.Startup, ex, "Failed to attach to parent process, compiler may stay open if parent is improperly shutdown");
                 }
             }
 
-            if (!settings.Compiler.EnableMessageStream)
-            {
-                logger.LogInformation(Events.Startup, "Compiler startup complete");
-                LoopConsoleInput();
-            }
-            else
-            {
-                objectStream!.Start();
-                logger.LogDebug(Events.Startup, "Hooked into standard input/output for interprocess communication");
-                logger.LogInformation(Events.Startup, "Compiler startup complete");
-                Task.Delay(TimeSpan.FromSeconds(2), tokenSource.Token).Wait();
-                objectStream.PushMessage(new CompilerMessage() { Type = CompilerMessageType.Ready });
-                var task = new Task(Worker, TaskCreationOptions.LongRunning);
-                task.Start();
-                task.Wait();
-            }
-        }
+            if (!Settings.Compiler.EnableMessageStream) return;
 
-        private void LoopConsoleInput()
-        {
-            if (tokenSource.IsCancellationRequested)
-            {
-                logger.LogInformation(Events.Shutdown, "Shutdown requested, killing console input loop.");
-                return;
-            }
-            string command = string.Empty;
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("Please type a command: ");
-            Console.ResetColor();
+            Logger.LogDebug(Events.Startup, "Started message server. . .");
+            ObjectStream!.Start();
+            Logger.LogInformation(Events.Startup, "Message server has started");
+            Task.Delay(TimeSpan.FromSeconds(2), TokenSource.Token).Wait();
+            ObjectStream.PushMessage(new CompilerMessage() { Type = CompilerMessageType.Ready });
+            Logger.LogInformation(Events.Startup, "Sent ready message to parent process");
 
-            while (true)
-            {
-                if (tokenSource.IsCancellationRequested)
-                {
-                    break;
-                }
-                ConsoleKeyInfo key = Console.ReadKey(true);
+            Task<Task> task = Task.Factory.StartNew(
+                function: Worker,
+                cancellationToken: TokenSource.Token,
+                creationOptions: TaskCreationOptions.LongRunning,
+                scheduler: TaskScheduler.Default
+            );
 
-                switch (key.Key)
-                {
-                    case ConsoleKey.Escape:
-                        Console.Write(new string('\b', Console.CursorLeft));
-                        tokenSource.Cancel();
-                        break;
-
-                    case ConsoleKey.Enter:
-                        if (!string.IsNullOrWhiteSpace(command))
-                        {
-                            Console.Write(new string('\b', Console.CursorLeft));
-                            string[] args = new string[0];
-                            string value = OnCommand(command, args);
-                            logger.LogInformation(Events.Command, $"Command: {command} | Result: {value}");
-                            Thread.Sleep(50);
-                        }
-                        else
-                        {
-                            continue;
-                        }
-                        break;
-
-                    case ConsoleKey.Backspace:
-                        command = command.Substring(0, command.Length - 1);
-                        Console.Write('\b');
-                        continue;
-
-                    default:
-                        command += key.KeyChar;
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.Write(key.KeyChar);
-                        Console.ResetColor();
-                        continue;
-                }
-                break;
-            }
-            LoopConsoleInput();
-        }
-
-        private string OnCommand(string command, string[] args)
-        {
-            return "Unhandled";
+            WorkerTask = task.Unwrap();
+            Logger.LogDebug(Events.Startup, "Compiler has started successfully and is awaiting jobs. . .");
+            WorkerTask.Wait();
         }
 
         private void OnMessage(CompilerMessage message)
         {
-            if (tokenSource.IsCancellationRequested)
+            if (TokenSource.IsCancellationRequested)
             {
-                logger.LogDebug(Events.Command, "OnMessage: Cancel has been requested");
                 return;
             }
 
             switch (message.Type)
             {
                 case CompilerMessageType.Compile:
-                    lock (compilerQueue)
+                    lock (CompilerQueue)
                     {
-                        message.Client = objectStream;
+                        message.Client = ObjectStream;
                         CompilerData data = (CompilerData)message.Data;
                         data.Message = message;
-                        data.SourceFiles = data.SourceFiles.OrderBy(f => f.Name).ToArray();
-                        data.ReferenceFiles = data.ReferenceFiles.OrderBy(f => f.Name).ToArray();
-                        compilerQueue.Enqueue(message);
+                        Logger.LogDebug(Events.Compile, $"Received compile job {message.Id} | Plugins: {data.SourceFiles.Length}, References: {data.ReferenceFiles.Length}");
+                        CompilerQueue.Enqueue(message);
                     }
                     break;
 
@@ -169,30 +115,37 @@ namespace Oxide.CompilerServices
             }
         }
 
-        private async void Worker()
+        private async Task Worker()
         {
-            CancellationToken token = tokenSource.Token;
-            while (!token.IsCancellationRequested)
+            CompilerMessage message = null;
+            while (!TokenSource.IsCancellationRequested)
             {
-                CompilerMessage message;
-                lock (compilerQueue)
-                {
-                    if (compilerQueue.Count == 0)
-                    {
-                        continue;
-                    }
 
-                    message = compilerQueue.Dequeue();
+                lock (CompilerQueue)
+                {
+                    if (CompilerQueue.Count != 0)
+                    {
+                        message = CompilerQueue.Dequeue();
+                    }
+                    else
+                    {
+                        message = null;
+                    }
+                }
+
+                if (message == null)
+                {
+                    await Task.Delay(1000);
+                    continue;
                 }
 
                 CompilerData data = (CompilerData)message.Data;
                 ICompilerService compiler = Services.GetRequiredService<ICompilerService>();
-                logger.LogDebug(Events.Compile, "Starting compile job {id}", message.Id);
                 await compiler.Compile(message.Id, data);
             }
         }
 
-        public void Exit(string? source)
+        private void Exit(string? source)
         {
             string message = "Termination request has been received";
             if (!string.IsNullOrWhiteSpace(message))
@@ -200,32 +153,8 @@ namespace Oxide.CompilerServices
                 message += $" from {source}";
             }
 
-            logger.LogInformation(Events.Shutdown, message);
-            tokenSource.Cancel();
-        }
-
-        private void ConfigureLogging(OxideSettings settings)
-        {
-            NLog.Config.LoggingConfiguration config = NLog.LogManager.Configuration;
-            NLog.Targets.FileTarget file = new();
-            config.AddTarget("file", file);
-            file.FileName = Path.Combine(settings.Path.Logging, settings.Logging.FileName);
-            file.Layout = "(${time})[${level}] ${logger:shortName=true}[${event-properties:item=EventId}]: ${message}${onexception:inner= ${newline}${exception:format=ToString,Data}}";
-            file.AutoFlush = true;
-            file.CreateDirs = true;
-            file.Encoding = settings.DefaultEncoding;
-            NLog.LogLevel level = settings.Logging.Level switch
-            {
-                LogLevel.Debug => NLog.LogLevel.Debug,
-                LogLevel.Warning => NLog.LogLevel.Warn,
-                LogLevel.Critical or LogLevel.Error => NLog.LogLevel.Error,
-                LogLevel.Trace => NLog.LogLevel.Trace,
-                _ => NLog.LogLevel.Info,
-            };
-            NLog.Config.LoggingRule rule = new("*", level, file);
-            config.LoggingRules.Add(rule);
-            NLog.LogManager.Configuration = config;
-            logger.LogDebug(Events.Startup, "Configured file logging for '{0}' and higher to {1}", settings.Logging.Level, file.FileName.ToString());
+            Logger.LogInformation(Events.Shutdown, message);
+            TokenSource.Cancel();
         }
     }
 }

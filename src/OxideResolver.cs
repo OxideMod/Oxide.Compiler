@@ -60,7 +60,6 @@ namespace Oxide.CompilerServices
 
             if (fileSystem.Exists)
             {
-                logger.LogDebug(Events.Compile, "Found from libraries directory: [Size: {Size}] {Name}", fileSystem.Length, fileSystem.Name);
                 reference = MetadataReference.CreateFromFile(fileSystem.FullName);
                 referenceCache.Add(reference);
                 return reference;
@@ -70,13 +69,12 @@ namespace Oxide.CompilerServices
 
             if (fileSystem.Exists)
             {
-                logger.LogDebug(Events.Compile, "Found from runtime directory: [Size: {Size}] {Name}", fileSystem.Length, fileSystem.Name);
                 reference = MetadataReference.CreateFromFile(fileSystem.FullName);
                 referenceCache.Add(reference);
                 return reference;
             }
 
-            logger.LogDebug(Events.Compile, "Missing assembly definition {name}", name);
+            logger.LogError(Events.Compile, "Unable to find required dependency {name}", name);
             return null;
         }
     }

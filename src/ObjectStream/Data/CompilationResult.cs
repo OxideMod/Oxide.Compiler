@@ -7,6 +7,8 @@
         public byte[] Data { get; set; }
         public byte[] Symbols { get; set; }
 
+        [NonSerialized] public int Success, Failed;
+
         public CompilationResult()
         {
             Data = Array.Empty<byte>();
