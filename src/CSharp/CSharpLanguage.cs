@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using ObjectStream.Data;
 using Oxide.CompilerServices.Logging;
 using Oxide.CompilerServices.Settings;
-using PolySharp.SourceGenerators;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
@@ -47,7 +46,7 @@ namespace Oxide.CompilerServices.CSharp
                 if (((CompilationResult)message.Data).Data.Length > 0) _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Success ====", id);
                 else _logger.LogInformation(Events.Compile, "==== Compilation Finished {id} | Failed ====", id);
                 message.Client!.PushMessage(message);
-                
+
             }
             catch (Exception e)
             {
@@ -63,7 +62,7 @@ namespace Oxide.CompilerServices.CSharp
             if (data.SourceFiles == null || data.SourceFiles.Length == 0) throw new ArgumentException("No source files provided", nameof(data.SourceFiles));
             OxideResolver resolver = (OxideResolver)_services.GetRequiredService<MetadataReferenceResolver>();
             _logger.LogDebug(Events.Compile, GetJobStructure(data));
-            
+
             Dictionary<string, MetadataReference> references = new(StringComparer.OrdinalIgnoreCase);
 
             if (data.StdLib)
@@ -126,22 +125,6 @@ namespace Oxide.CompilerServices.CSharp
 
             CSharpCompilationOptions compOptions = new(data.OutputKind(), metadataReferenceResolver: resolver, platform: data.Platform(), allowUnsafe: true, optimizationLevel: data.Debug ? OptimizationLevel.Debug : OptimizationLevel.Release);
             CSharpCompilation comp = CSharpCompilation.Create(Path.GetRandomFileName(), trees.Values, references.Values, compOptions);
-
-            PolyfillsGenerator generator = new();
-            ISourceGenerator sourceGen = generator.AsSourceGenerator();
-
-            GeneratorDriver driver = CSharpGeneratorDriver.Create(generators: new ISourceGenerator[] { sourceGen }
-            , driverOptions: new GeneratorDriverOptions(default, trackIncrementalGeneratorSteps: true));
-            driver = driver.WithUpdatedParseOptions(options);
-
-            driver = driver.RunGenerators(comp, _token);
-            GeneratorDriverRunResult genResult = driver.GetRunResult();
-
-            if (genResult.GeneratedTrees.Length > 0)
-            {
-                _logger.LogInformation(Events.Compile, "Adding compiler generated classes: {classes}", string.Join(", ", genResult.GeneratedTrees.Select(t => Path.GetFileName(t.FilePath))));
-                comp = comp.AddSyntaxTrees(genResult.GeneratedTrees);
-            }
 
             CompilationResult? payload = CompileProject(comp, message);
             return message;
