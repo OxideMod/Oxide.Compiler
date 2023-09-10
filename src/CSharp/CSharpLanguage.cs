@@ -112,11 +112,12 @@ namespace Oxide.CompilerServices.CSharp
             foreach (var source in data.SourceFiles)
             {
                 string fileName = Path.GetFileName(source.Name);
-
+                bool isUnicode = false;
                 string sourceString = Regex.Replace(encoding.GetString(source.Data), @"\\[uU]([0-9A-F]{4})", match =>
                 {
+                    isUnicode = true;
                     return ((char)int.Parse(match.Value.Substring(2), NumberStyles.HexNumber)).ToString();
-                });
+                }, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
                 SyntaxTree tree = CSharpSyntaxTree.ParseText(sourceString, options, path: fileName, encoding: encoding, cancellationToken: _token);
                 trees.Add(source, tree);
