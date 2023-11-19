@@ -52,10 +52,24 @@ namespace Oxide.CompilerServices
             .WithLogging((logging, cfg) =>
             {
                 IConfigurationSection logSettings = cfg.GetSection("Logging");
+                string filePath = logSettings.GetValue("FileName", "oxide.compiler.log");
+
+                if (string.IsNullOrWhiteSpace(filePath))
+                {
+                    filePath = "oxide.compiler.log";
+                }
+
+                if (filePath.Equals("oxide.compiler.log"))
+                {
+                    IConfigurationSection pathSettings = cfg.GetSection("Path");
+                    string startDirectory = pathSettings.GetValue("Logging", Environment.CurrentDirectory);
+                    filePath = Path.Combine(startDirectory, filePath);
+                }
+
                 Log.Logger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(ApplicationLogLevel)
                     .Enrich.FromLogContext()
-                    .WriteTo.File(logSettings.GetValue<string>("FileName", "compiler.log"),
+                    .WriteTo.File(filePath,
                         rollOnFileSizeLimit: true,
                         fileSizeLimitBytes: (long)5e+6,
                         retainedFileCountLimit: 5,
