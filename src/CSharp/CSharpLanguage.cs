@@ -43,9 +43,9 @@ namespace Oxide.CompilerServices.CSharp
             Stopwatch stopwatch = Stopwatch.StartNew();
             _logger.LogInformation(Events.Compile, $"Starting compilation of job {id} | Total Plugins: {data.SourceFiles.Length}");
             string details =
-                $"Settings[Encoding: {data.Encoding}, CSVersion: {data.CSharpVersion()}, Target: {data.OutputKind()}, Platform: {data.Platform()}, StdLib: {data.StdLib}, Debug: {data.Debug}]";
+                $"Settings[Encoding: {data.Encoding}, CSVersion: {data.CSharpVersion()}, Target: {data.OutputKind()}, Platform: {data.Platform()}, StdLib: {data.StdLib}, Debug: {data.Debug}, Preprocessor: {string.Join(", ", data.Preprocessor)}]";
 
-            if (Program.ApplicationLogLevel.MinimumLevel < LogEventLevel.Debug)
+            if (Program.ApplicationLogLevel.MinimumLevel <= LogEventLevel.Debug)
             {
                 if (data.ReferenceFiles.Length > 0)
                 {
@@ -150,7 +150,7 @@ namespace Oxide.CompilerServices.CSharp
 
             Dictionary<CompilerFile, SyntaxTree> trees = new();
             Encoding encoding = Encoding.GetEncoding(data.Encoding);
-            CSharpParseOptions options = new(data.CSharpVersion());
+            CSharpParseOptions options = new(data.CSharpVersion(), preprocessorSymbols: data.Preprocessor);
             foreach (var source in data.SourceFiles)
             {
                 string fileName = Path.GetFileName(source.Name);
