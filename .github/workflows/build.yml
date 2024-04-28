@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Increment Version
@@ -19,7 +19,7 @@ jobs:
         with:
           name: "VERSION"
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-      - uses: actions/setup-dotnet@v3
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 7.0.x
       - name: Build Executables
@@ -41,7 +41,7 @@ jobs:
           Copy-Item (Join-Path $startPath 'linux-x64' 'publish' 'Oxide.Compiler') (Join-Path $artifactPath 'linux-x64.Compiler') -Force
           Copy-Item (Join-Path $startPath 'osx-x64' 'publish' 'Oxide.Compiler') (Join-Path $artifactPath 'osx-x64.Compiler') -Force
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}
           path: artifacts/
