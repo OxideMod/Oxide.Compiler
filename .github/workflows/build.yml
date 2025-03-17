@@ -1,8 +1,5 @@
 name: Build
 on:
-  push:
-    branches:
-      - develop
   workflow_call:
     inputs:
       branch-postfix:
@@ -11,6 +8,15 @@ on:
 env:
   BUILD: ${{ inputs.branch-postfix == 'master' && 'Release' || 'Debug' }}
 jobs:
+  # increment-version:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Increment Version
+  #       uses: action-pack/increment@v2
+  #       with:
+  #         name: "VERSION"
+  #         token: ${{ secrets.REPO_ACCESS_TOKEN }}
+
   build:
     runs-on: windows-latest
     steps:
@@ -21,52 +27,105 @@ jobs:
         uses: action-pack/increment@v2
         with:
           name: "VERSION"
-          token: ${{ secrets.MY_TOKEN }}
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
       - name: Build Executables
         shell: pwsh
         run: |
-          $env:GITHUB_RUN_ID = $null
-          dotnet publish --nologo -c $env:BUILD -r win-x64 -restore --version-suffix test /p:Version=1.0.${{ vars.VERSION }}
+          $startPath = Join-Path (Get-Location) 'src' 'bin' $env:BUILD 'net9.0'
           $artifactPath = Join-Path (Get-Location) 'artifacts'
           if (!(Test-Path $artifactPath))
           {
               New-Item $artifactPath -ItemType Directory -Force
           }
-          $startPath = Join-Path (Get-Location) 'src' 'bin' $env:BUILD 'net9.0'
+          $env:GITHUB_RUN_ID = $null
+
+          dotnet publish -r win-x64 -c $env:BUILD --self-contained --p:PublishAot=true --p:OptimizationPreference=Speed --p:PublishTrimmed=true --p:PublishSingleFile=true --p:PublishReadyToRun=true /p:Version=2.0.${{ vars.VERSION }}
+          Copy-Item (Join-Path $startPath 'win-x64' 'publish' 'Oxide.Compiler.exe') (Join-Path $artifactPath 'win-x64.AOT.Compiler.exe') -Force
+
+          dotnet publish -r win-x64 -c $env:BUILD --self-contained --p:PublishSingleFile=true --p:PublishReadyToRun=true /p:Version=2.0.${{ vars.VERSION }}
           Copy-Item (Join-Path $startPath 'win-x64' 'publish' 'Oxide.Compiler.exe') (Join-Path $artifactPath 'win-x64.Compiler.exe') -Force
+
+          dotnet publish -r linux-x64 -c $env:BUILD --self-contained --p:PublishSingleFile=true --p:PublishReadyToRun=true /p:Version=2.0.${{ vars.VERSION }}
+          Copy-Item (Join-Path $startPath 'linux-x64' 'publish' 'Oxide.Compiler') (Join-Path $artifactPath 'linux-x64.Compiler') -Force
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}
           path: artifacts/
 
-  build-linux:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Increment Version
-        uses: action-pack/increment@v2
-        with:
-          name: "VERSION"
-          token: ${{ secrets.MY_TOKEN }}
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 9.0.x
-      - name: Build Executables
-        run: |
-          dotnet publish --nologo -c ${{ env.BUILD }} -r linux-x64 -restore --version-suffix test /p:Version=1.0.${{ vars.VERSION }}
-          mkdir -p artifacts
-          cp src/bin/${{ env.BUILD }}/net9.0/linux-x64/publish/Oxide.Compiler artifacts/linux-x64.Compiler
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-            name: ${{ github.event.repository.name }}-linux
-            path: artifacts/
+  # build:
+  #   needs: "increment-version"
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
+  #     - uses: actions/setup-dotnet@v4
+  #       with:
+  #         dotnet-version: 9.0.x
+  #     - name: Build Executables
+  #       shell: pwsh
+  #       run: |
+  #         $env:GITHUB_RUN_ID = $null
+  #         dotnet publish --nologo -c $env:BUILD -r win-x64 -restore --version-suffix test /p:Version=1.0.${{ vars.VERSION }}
+  #         $artifactPath = Join-Path (Get-Location) 'artifacts'
+  #         if (!(Test-Path $artifactPath))
+  #         {
+  #             New-Item $artifactPath -ItemType Directory -Force
+  #         }
+  #         $startPath = Join-Path (Get-Location) 'src' 'bin' $env:BUILD 'net9.0'
+  #         Copy-Item (Join-Path $startPath 'win-x64' 'publish' 'Oxide.Compiler.exe') (Join-Path $artifactPath 'win-x64.Compiler.exe') -Force
+  #     - name: Upload Artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ${{ github.event.repository.name }}-windows
+  #         path: artifacts/
+
+  # build-linux:
+  #   needs: "increment-version"
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
+  #     - uses: actions/setup-dotnet@v4
+  #       with:
+  #         dotnet-version: 9.0.x
+  #     - name: Build Executables
+  #       run: |
+  #         dotnet publish --nologo -c ${{ env.BUILD }} -r linux-x64 -restore --version-suffix test /p:Version=1.0.${{ vars.VERSION }}
+  #         mkdir -p artifacts
+  #         cp src/bin/${{ env.BUILD }}/net9.0/linux-x64/publish/Oxide.Compiler artifacts/linux-x64.Compiler
+  #     - name: Upload Artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #           name: ${{ github.event.repository.name }}-linux
+  #           path: artifacts/
+
+  # build-matrix:
+  #   needs: "increment-version"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       os: [ ubuntu-latest, windows-latest ]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
+  #     - uses: actions/setup-dotnet@v4
+  #       with:
+  #         dotnet-version: 9.0.x
+  #     - name: Build Executables
+  #       run: |
+  #         dotnet publish --nologo -c ${{ env.BUILD }} -r linux-x64 -restore --version-suffix test /p:Version=1.0.${{ vars.VERSION }}
+  #         mkdir -p artifacts
+  #         cp src/bin/${{ env.BUILD }}/net9.0/linux-x64/publish/Oxide.Compiler artifacts/linux-x64.Compiler
+  #     - name: Upload Artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #           name: ${{ github.event.repository.name }}
+  #           path: artifacts/
