@@ -16,37 +16,12 @@ jobs:
     with:
       branch-postfix: ${{ github.ref_name }}
   deploy:
-    name: Deploy to R2
-    runs-on: ubuntu-22.04
+    name: Deploy to S3
+    uses: OxideMod/Actions/.github/workflows/r2-publish.yaml@main
     needs: build
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-      - name: Generate Checksum Files
-        shell: pwsh
-        run: |
-          Get-ChildItem -Path 'artifacts' | ForEach-Object {
-              $md5 = (Get-FileHash $_.FullName -Algorithm MD5).Hash.ToLower()
-              $data = [System.Text.Encoding]::UTF8.GetBytes($md5)
-              [System.IO.File]::WriteAllBytes("$( $_.FullName ).md5", $data)
-          }
-      - name: Uninstall Existing AWS CLI
-        run: sudo apt-get remove -y awscli
-      - name: Install AWS CLI v2.22.35
-        run: |
-            curl -sL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.22.35.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install --update
-            rm -rf awscliv2.zip aws
-      - name: Verify AWS CLI Version
-        run: aws --version
-      - name: Deploy to Cloadflare R2
-        run: |
-          aws s3 sync artifacts s3://oxide-downloads/artifacts/${{ github.event.repository.name }}/${{ github.ref_name }} --endpoint-url ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET }}
-          AWS_DEFAULT_REGION: auto
+    with:
+      generate-filehash: true
+    secrets:
+      CLOUDFLARE_R2_KEY: ${{ secrets.CLOUDFLARE_R2_KEY }}
+      CLOUDFLARE_R2_SECRET: ${{ secrets.CLOUDFLARE_R2_SECRET }}
+      CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
