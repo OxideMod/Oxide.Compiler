@@ -2,15 +2,16 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.Extensions.Logging;
 using Oxide.CompilerServices.Common;
-using Oxide.CompilerServices.Enums;
 using Oxide.CompilerServices.Interfaces;
-using Oxide.CompilerServices.Models.Compiler;
-using Oxide.CompilerServices.Models.Configuration;
+using Oxide.CompilerServices.Serialization;
+using Oxide.CompilerServices.Types.Compilation;
+using Oxide.CompilerServices.Types.Configuration;
 using Serilog.Events;
 
 namespace Oxide.CompilerServices.Services;
@@ -18,14 +19,9 @@ namespace Oxide.CompilerServices.Services;
 public class CompilationService : ICompilationService
 {
     private readonly ILogger _logger;
-
     private readonly AppConfiguration _appConfiguration;
-
     private readonly MessageBrokerService _messageBrokerService;
-
     private readonly MetadataReferenceResolver _metadataReferenceResolver;
-
-    private readonly ISerializer _serializer;
 
     private readonly ImmutableArray<string> _ignoredCodes = ImmutableArray.Create(new[]
     {
@@ -33,14 +29,12 @@ public class CompilationService : ICompilationService
     });
 
     public CompilationService(ILogger<CompilationService> logger, AppConfiguration appConfiguration,
-        MessageBrokerService messageBrokerService, MetadataReferenceResolver metadataReferenceResolver,
-        ISerializer serializer)
+        MessageBrokerService messageBrokerService, MetadataReferenceResolver metadataReferenceResolver)
     {
         _logger = logger;
         _appConfiguration = appConfiguration;
         _messageBrokerService = messageBrokerService;
         _metadataReferenceResolver = metadataReferenceResolver;
-        _serializer = serializer;
     }
 
     public async ValueTask<CompilerMessage> GetCompilationAsync(int id, CompilerData compilerData, CancellationToken cancellationToken)
@@ -172,8 +166,8 @@ public class CompilationService : ICompilationService
                         }
                         default:
                         {
-                            _logger.LogWarning(Constants.CompileEventId, "Ignoring unhandled project reference: {ref}",
-                                fileName);
+                            _logger.LogWarning(Constants.CompileEventId,
+                                $"Ignoring unhandled project reference: {fileName}");
                             continue;
                         }
                     }
@@ -205,8 +199,8 @@ public class CompilationService : ICompilationService
                         $"Plugin {fileName} is using unicode escape sequence");
                 }
 
-                SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(sourceString, parseOptions, fileName, encoding,
-                    cancellationToken);
+                SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(sourceString, parseOptions,
+                    Path.GetFullPath(compilerFile.Name), encoding, cancellationToken);
 
                 syntaxTrees.Add(compilerFile, syntaxTree);
             }
@@ -216,7 +210,8 @@ public class CompilationService : ICompilationService
             CSharpCompilationOptions compilationOptions = new(compilerData.OutputKind(), metadataReferenceResolver: resolver,
                 platform: compilerData.Platform(),
                 allowUnsafe: true,
-                optimizationLevel: compilerData.Debug ? OptimizationLevel.Debug : OptimizationLevel.Release);
+                deterministic: true,
+                optimizationLevel: OptimizationLevel.Debug);
 
             string assemblyName = Path.GetRandomFileName();
             CSharpCompilation compilation = CSharpCompilation.Create(assemblyName, syntaxTrees.Values,
@@ -226,7 +221,9 @@ public class CompilationService : ICompilationService
 
             CompileProject(compilation, compilerData, compilerMessage, compilationResult, cancellationToken);
 
-            compilerMessage.Data = _serializer.Serialize(compilationResult);
+            compilerMessage.Data = JsonSerializer.SerializeToUtf8Bytes(compilationResult,
+                CompilationResultContext.Default.CompilationResult);
+
             return compilerMessage;
         }
         catch (Exception exception)
@@ -240,13 +237,15 @@ public class CompilationService : ICompilationService
         CompilationResult compilationResult, CancellationToken cancellationToken)
     {
         using MemoryStream peStream = new();
+        using MemoryStream pdbStream = new();
 
-        EmitResult result = compilation.Emit(peStream, options: compilerData.Debug ? Constants.PdbEmitOptions : null,
+        EmitResult result = compilation.Emit(peStream, pdbStream, options: Constants.PdbEmitOptions,
             cancellationToken: cancellationToken);
 
         if (result.Success)
         {
             compilationResult.Data = peStream.ToArray();
+            compilationResult.Symbols = pdbStream.ToArray();
             compilationResult.Success = compilation.SyntaxTrees.Length;
             return;
         }
@@ -271,7 +270,7 @@ public class CompilationService : ICompilationService
 
                 if (compilation.SyntaxTrees.Contains(tree) && diagnostic.Severity == DiagnosticSeverity.Error)
                 {
-                    _logger.LogWarning(Constants.CompileEventId, "Failed to compile {tree} - {message} (L: {line} | P: {pos}) | Removing from project",
+                    _logger.LogError(Constants.CompileEventId, "Failed to compile {tree} - {message} (L: {line} | P: {pos}) | Removing from project",
                         fileName, diagnostic.GetMessage(), line, charPos);
 
                     compilation = compilation.RemoveSyntaxTrees(tree);

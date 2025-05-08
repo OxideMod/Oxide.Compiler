@@ -1,20 +1,17 @@
-﻿using System.IO.Pipes;
+﻿using System.Buffers;
+using System.Buffers.Binary;
+using System.IO.Pipes;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Oxide.CompilerServices.Enums;
-using Oxide.CompilerServices.Interfaces;
-using Oxide.CompilerServices.Models.Compiler;
-using Oxide.CompilerServices.Models.Configuration;
+using Oxide.CompilerServices.Serialization;
+using Oxide.CompilerServices.Types.Configuration;
 
 namespace Oxide.CompilerServices.Services;
 
 public class MessageBrokerService
 {
-    private const int DefaultMaxBufferSize = 1024;
-
     private readonly ILogger<MessageBrokerService> _logger;
     private readonly AppConfiguration _appConfiguration;
-    private readonly ISerializer _serializer;
-    private readonly Pooling.IArrayPool<byte> _arrayPool;
 
     private NamedPipeClientStream _pipeClient;
 
@@ -22,12 +19,10 @@ public class MessageBrokerService
 
     public event Action<CompilerMessage> OnMessageReceived;
 
-    public MessageBrokerService(ILogger<MessageBrokerService> logger, AppConfiguration appConfiguration, ISerializer serializer)
+    public MessageBrokerService(ILogger<MessageBrokerService> logger, AppConfiguration appConfiguration)
     {
         _logger = logger;
         _appConfiguration = appConfiguration;
-        _serializer = serializer;
-        _arrayPool = Pooling.ArrayPool<byte>.Shared;
     }
 
     public async ValueTask StartAsync(CancellationToken cancellationToken)
@@ -37,7 +32,7 @@ public class MessageBrokerService
 
         await _pipeClient.ConnectAsync(cancellationToken);
 
-        Task.Run(() => WorkerAsync(cancellationToken), cancellationToken);
+        _ = Task.Run(() => WorkerAsync(cancellationToken), cancellationToken);
     }
 
     private async ValueTask WorkerAsync(CancellationToken cancellationToken)
@@ -53,7 +48,6 @@ public class MessageBrokerService
                     CompilerMessage? compilerMessage = await ReadMessageAsync(cancellationToken);
                     if (compilerMessage != null)
                     {
-                        _logger.LogInformation($"Received message from server: {compilerMessage.Type}");
                         OnMessageReceived(compilerMessage);
                         processed = true;
                     }
@@ -73,114 +67,74 @@ public class MessageBrokerService
 
     public async ValueTask SendMessageAsync(CompilerMessage message, CancellationToken cancellationToken)
     {
-        if (message == null)
-        {
-            throw new ArgumentNullException(nameof(message));
-        }
-
         await WriteMessageAsync(message, cancellationToken);
     }
 
     private async ValueTask WriteMessageAsync(CompilerMessage message, CancellationToken cancellationToken)
     {
-        byte[] data = _serializer.Serialize(message);
-        byte[] buffer = _arrayPool.Take(data.Length + sizeof(int));
         try
         {
-            int destinationIndex = data.Length.WriteBigEndian(buffer);
-            Array.Copy(data, 0, buffer, destinationIndex, data.Length);
-            await OnWriteAsync(buffer, 0, buffer.Length, cancellationToken);
+            ArrayBufferWriter<byte> bufferWriter = new();
+
+            await using Utf8JsonWriter jsonWriter = new(bufferWriter);
+
+            JsonSerializer.Serialize(jsonWriter, message, CompilerMessageContext.Default.CompilerMessage);
+
+            ReadOnlyMemory<byte> payload = bufferWriter.WrittenMemory;
+
+            Span<byte> lengthBuffer = stackalloc byte[sizeof(int)];
+            BinaryPrimitives.WriteInt32BigEndian(lengthBuffer, payload.Length);
+
+            _pipeClient.Write(lengthBuffer);
+
+            await _pipeClient.WriteAsync(payload, cancellationToken);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError($"Error sending message to server: {exception}");
-        }
-        finally
-        {
-            _arrayPool.Return(buffer);
+            _logger.LogError(ex, "Error sending message to server");
         }
     }
 
     private async ValueTask<CompilerMessage?> ReadMessageAsync(CancellationToken cancellationToken)
     {
-        byte[] buffer = _arrayPool.Take(sizeof(int));
-        int read = 0;
+        if (_pipeClient is not { IsConnected: true })
+        {
+            return null;
+        }
+
+        byte[] lengthBuffer = ArrayPool<byte>.Shared.Rent(sizeof(int));
         try
         {
-            while (read < buffer.Length)
+            await _pipeClient.ReadExactlyAsync(lengthBuffer.AsMemory(0, sizeof(int)), cancellationToken);
+
+            int messageLength = BinaryPrimitives.ReadInt32BigEndian(lengthBuffer.AsSpan(0, sizeof(int)));
+            if (messageLength <= 0)
             {
-                read += await OnReadAsync(buffer, read, buffer.Length - read, cancellationToken);
-                if (read == 0)
-                {
-                    return null;
-                }
+                return null;
             }
 
-            int length = buffer.ReadBigEndian();
-            byte[] buffer2 = _arrayPool.Take(length);
-            read = 0;
+            byte[] messageBuffer = ArrayPool<byte>.Shared.Rent(messageLength);
             try
             {
-                while (read < length)
-                {
-                    read += await OnReadAsync(buffer2, read, length - read, cancellationToken);
-                }
+                await _pipeClient.ReadExactlyAsync(messageBuffer.AsMemory(0, messageLength), cancellationToken);
 
-                return _serializer.Deserialize<CompilerMessage>(buffer2);
+                return  JsonSerializer.Deserialize<CompilerMessage>(messageBuffer.AsSpan(0, messageLength),
+                    CompilerMessageContext.Default.CompilerMessage);
             }
             finally
             {
-                _arrayPool.Return(buffer2);
+                ArrayPool<byte>.Shared.Return(messageBuffer);
             }
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError($"Error reading message: {exception}");
+            _logger.LogError(ex, "Error reading message from named pipe");
             return null;
         }
         finally
         {
-            _arrayPool.Return(buffer);
+            ArrayPool<byte>.Shared.Return(lengthBuffer);
         }
-    }
-
-    private async ValueTask OnWriteAsync(byte[] buffer, int index, int count, CancellationToken cancellationToken)
-    {
-        Validate(buffer, index, count);
-
-        int remaining = count;
-        int written = 0;
-        while (remaining > 0)
-        {
-            int toWrite = Math.Min(DefaultMaxBufferSize, remaining);
-            await _pipeClient.WriteAsync(buffer.AsMemory(index + written, toWrite), cancellationToken);
-            remaining -= toWrite;
-            written += toWrite;
-            await _pipeClient.FlushAsync(cancellationToken);
-        }
-    }
-
-    private async ValueTask<int> OnReadAsync(byte[] buffer, int index, int count, CancellationToken cancellationToken)
-    {
-        Validate(buffer, index, count);
-
-        int read = 0;
-        int remaining = count;
-        while (remaining > 0)
-        {
-            int toRead = Math.Min(DefaultMaxBufferSize, remaining);
-            int r = await _pipeClient.ReadAsync(buffer.AsMemory(index + read, toRead), cancellationToken);
-
-            if (r == 0 && read == 0)
-            {
-                return 0;
-            }
-
-            read += r;
-            remaining -= r;
-        }
-
-        return read;
     }
 
     public async ValueTask<int> SendReadyMessageAsync(CancellationToken cancellationToken)
@@ -191,6 +145,7 @@ public class MessageBrokerService
             Type = MessageType.Ready,
         };
 
+        _logger.LogInformation("Sending ready message to server");
         await SendMessageAsync(message, cancellationToken);
         return message.Id;
     }
@@ -198,29 +153,5 @@ public class MessageBrokerService
     public void Stop()
     {
         _pipeClient.Dispose();
-    }
-
-    private void Validate(byte[] buffer, int index, int count)
-    {
-        if (buffer == null)
-        {
-            throw new ArgumentNullException(nameof(buffer));
-        }
-
-        if (index < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(index), "Value must be zero or greater");
-        }
-
-        if (count < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(count), "Value must be zero or greater");
-        }
-
-        if (index + count > buffer.Length)
-        {
-            throw new ArgumentOutOfRangeException($"{nameof(index)} + {nameof(count)}",
-                "Attempted to read more than buffer can allow");
-        }
     }
 }

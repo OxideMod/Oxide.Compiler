@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace Oxide.CompilerServices.Models.Configuration;
+namespace Oxide.CompilerServices.Types.Configuration;
 
 public class AppConfiguration
 {

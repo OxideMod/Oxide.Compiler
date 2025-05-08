@@ -2,13 +2,14 @@
 using System.Globalization;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Oxide.CompilerServices.Common;
-using Oxide.CompilerServices.Enums;
 using Oxide.CompilerServices.Interfaces;
-using Oxide.CompilerServices.Models.Compiler;
-using Oxide.CompilerServices.Models.Configuration;
+using Oxide.CompilerServices.Serialization;
+using Oxide.CompilerServices.Types.Compilation;
+using Oxide.CompilerServices.Types.Configuration;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Oxide.CompilerServices.Services;
@@ -20,11 +21,10 @@ public class EntryPointService : IEntryPointService
     private readonly IHostApplicationLifetime _appLifetime;
     private readonly MessageBrokerService _messageBrokerService;
     private readonly ICompilationService _compilationService;
-    private readonly ISerializer _serializer;
 
     public EntryPointService(ILogger<EntryPointService> logger, AppConfiguration appConfiguration,
         IHostApplicationLifetime appLifetime, MessageBrokerService messageBrokerService,
-        ICompilationService compilationService, ISerializer serializer)
+        ICompilationService compilationService)
     {
         Constants.ApplicationLogLevel.MinimumLevel = appConfiguration.GetLoggingConfiguration().Level.ToSerilog();
 
@@ -33,7 +33,6 @@ public class EntryPointService : IEntryPointService
         _appLifetime = appLifetime;
         _messageBrokerService = messageBrokerService;
         _compilationService = compilationService;
-        _serializer = serializer;
     }
 
     public async ValueTask StartAsync(CancellationToken cancellationToken)
@@ -78,6 +77,7 @@ public class EntryPointService : IEntryPointService
 
         if (!_appConfiguration.GetCompilerConfiguration().EnableMessageStream)
         {
+            _logger.LogWarning(Constants.StartupEventId, "Message stream is disabled, compiler will not receive compile jobs");
             return;
         }
 
@@ -97,7 +97,14 @@ public class EntryPointService : IEntryPointService
             {
                 try
                 {
-                    CompilerData compilerData = _serializer.Deserialize<CompilerData>(compilerMessage.Data);
+                    CompilerData? compilerData = JsonSerializer.Deserialize<CompilerData>(compilerMessage.Data,
+                        CompilerDataContext.Default.CompilerData);
+
+                    if (compilerData == null)
+                    {
+                        _logger.LogError(Constants.CompileEventId, $"Received invalid compiler data for job {compilerMessage.Id}");
+                        return;
+                    }
 
                     _logger.LogDebug(Constants.CompileEventId,
                         $"Received compile job {compilerMessage.Id} | Plugins: {compilerData.SourceFiles.Length}, References: {compilerData.ReferenceFiles.Length}");
@@ -124,7 +131,7 @@ public class EntryPointService : IEntryPointService
             }
             case MessageType.Shutdown:
             {
-                RequestShutdown("shutdown");
+                RequestShutdown("Server");
                 break;
             }
             case MessageType.Unknown:

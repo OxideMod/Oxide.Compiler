@@ -4,15 +4,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Oxide.CompilerServices.Interfaces;
-using Oxide.CompilerServices.Models.Configuration;
 using Oxide.CompilerServices.Services;
+using Oxide.CompilerServices.Types.Configuration;
 using Serilog;
 
 namespace Oxide.CompilerServices.Common;
 
 public static class DependencyInjection
 {
-    public static void AddServices(this IServiceCollection services, IConfiguration configuration, string[] args)
+    public static void AddServices(this IServiceCollection services, ConfigurationManager configuration, string[] args)
     {
         services.Configure<HostOptions>(service =>
         {
@@ -20,34 +20,31 @@ public static class DependencyInjection
             service.ServicesStopConcurrently = true;
         });
 
-        ConfigurationBuilder configurationBuilder = new();
 
-        configurationBuilder.AddCommandLine(args, Constants.SwitchMappings);
-        configurationBuilder.AddJsonFile(Path.Combine(Constants.RootPath, "oxide.compiler.json"), true);
-        configurationBuilder.AddEnvironmentVariables("Oxide_");
+        configuration.AddCommandLine(args, Constants.SwitchMappings);
+        configuration.AddJsonFile(Path.Combine(Constants.RootPath, "oxide.compiler.json"), true);
+        configuration.AddEnvironmentVariables("Oxide_");
 
-        IConfigurationRoot configurationRoot = configurationBuilder.Build();
-
-        string mode = configurationRoot.GetValue<string>("Mode", "release");
+        string mode = configuration.GetValue<string>("Mode", "release");
         if (mode == "test")
         {
-            string? sourcePath = configurationRoot.GetValue<string>("Source");
+            string? sourcePath = configuration.GetValue<string>("Source");
             //return CompileTestFilesAsync(sourcePath, outputPath, application.ServiceProvider);
         }
 
-        services.Configure<CompilerConfiguration>(configurationRoot.GetSection("Compiler"));
-        services.Configure<DirectoryConfiguration>(configurationRoot.GetSection("Path"));
-        services.Configure<LoggingConfiguration>(configurationRoot.GetSection("Logging"));
+        services.Configure<CompilerConfiguration>(configuration.GetSection("Compiler"));
+        services.Configure<DirectoryConfiguration>(configuration.GetSection("Path"));
+        services.Configure<LoggingConfiguration>(configuration.GetSection("Logging"));
 
 
         services.AddLogging(loggingBuilder =>
         {
-            IConfigurationSection logSettings = configurationRoot.GetSection("Logging");
+            IConfigurationSection logSettings = configuration.GetSection("Logging");
             string filePath = logSettings.GetValue("FileName", "oxide.compiler.log");
 
             if (filePath.Equals("oxide.compiler.log"))
             {
-                IConfigurationSection pathSettings = configurationRoot.GetSection("Path");
+                IConfigurationSection pathSettings = configuration.GetSection("Path");
                 string startDirectory = pathSettings.GetValue("Logging", Environment.CurrentDirectory);
                 filePath = Path.Combine(startDirectory, filePath);
             }
@@ -60,19 +57,18 @@ public static class DependencyInjection
 #if DEBUG
             loggingBuilder.AddDebug();
 #endif
-            if (!configurationRoot.GetSection("Compiler").GetValue("EnableMessageStream", false))
+            if (!configuration.GetSection("Compiler").GetValue("EnableMessageStream", false))
             {
                 loggingBuilder.AddSimpleConsole();
             }
         });
 
 
-        services.AddSingleton(configurationRoot);
+        services.AddSingleton<IConfigurationRoot>(configuration);
         services.AddSingleton<AppConfiguration>();
         services.AddSingleton<ICompilationService, CompilationService>();
         services.AddTransient<MetadataReferenceResolver, OxideResolver>();
         services.AddSingleton<MessageBrokerService>();
-        services.AddSingleton<ISerializer, Serializer>();
         services.AddSingleton<IEntryPointService, EntryPointService>();
         services.AddHostedService<AppHostService>();
     }

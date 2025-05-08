@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
-using Oxide.CompilerServices.Models.Configuration;
+using Oxide.CompilerServices.Types.Configuration;
 
 namespace Oxide.CompilerServices.Common;
 

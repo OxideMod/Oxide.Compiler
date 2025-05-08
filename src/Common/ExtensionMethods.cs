@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
-using Oxide.CompilerServices.Enums;
-using Oxide.CompilerServices.Models.Compiler;
+using Oxide.CompilerServices.Types.Compilation;
 
 namespace Oxide.CompilerServices.Common;
 
@@ -49,7 +48,9 @@ public static class ExtensionMethods
     {
         return data.Version switch
         {
+            CompilerLanguageVersion.Latest => Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest,
             CompilerLanguageVersion.Preview => Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview,
+            CompilerLanguageVersion.V14 => Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14,
             CompilerLanguageVersion.V13 => Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp13,
             CompilerLanguageVersion.V12 => Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12,
             CompilerLanguageVersion.V11 => Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11,

@@ -1,4 +1,4 @@
-﻿using Oxide.CompilerServices.Models.Compiler;
+﻿using Oxide.CompilerServices.Types.Compilation;
 
 namespace Oxide.CompilerServices.Interfaces;
 

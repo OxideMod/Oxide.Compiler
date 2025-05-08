@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Oxide.CompilerServices.Common;
 
-namespace Oxide.CompilerServices.Models.Configuration;
+namespace Oxide.CompilerServices.Types.Configuration;
 
 public class LoggingConfiguration
 {
