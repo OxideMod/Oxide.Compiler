@@ -30,11 +30,11 @@ jobs:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: 10.0.x
       - name: Build Executables
         shell: pwsh
         run: |
-          $startPath = Join-Path (Get-Location) 'src' 'bin' $env:BUILD 'net9.0'
+          $startPath = Join-Path (Get-Location) 'src' 'bin' $env:BUILD 'net10.0'
           $artifactPath = Join-Path (Get-Location) 'artifacts'
           if (!(Test-Path $artifactPath))
           {
