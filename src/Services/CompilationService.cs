@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
@@ -110,7 +111,13 @@ public class CompilationService : ICompilationService
             {
                 Id = id,
                 Type = MessageType.Error,
-                ExtraData = exception
+                Errors = new List<CompilerError>
+                {
+                    new()
+                    {
+                        Message = $"An error occurred while compiling: {exception}"
+                    }
+                }
             }, cancellationToken);
 
             throw;
@@ -181,23 +188,20 @@ public class CompilationService : ICompilationService
 
             foreach (CompilerFile compilerFile in compilerData.SourceFiles)
             {
-                string sourceString = encoding.GetString(compilerFile.Data);
-
-                /*string fileName = Path.GetFileName(compilerFile.Name);
+                string fileName = Path.GetFileName(compilerFile.Name);
                 bool isUnicode = false;
 
                 string sourceString = RegexExtensions.UnicodeEscapePattern.Replace(
                     encoding.GetString(compilerFile.Data), match =>
                     {
                         isUnicode = true;
-                        return ((char)int.Parse(match.Value.Substring(2), NumberStyles.HexNumber)).ToString();
+                        return ((char)int.Parse(match.Value.AsSpan()[2..], NumberStyles.HexNumber)).ToString();
                     });
 
                 if (isUnicode)
                 {
-                    _logger.LogDebug(Constants.CompileEventId,
-                        $"Plugin {fileName} is using unicode escape sequence");
-                }*/
+                    _logger.LogDebug($"Plugin {fileName} is using unicode escape sequence");
+                }
 
                 SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(sourceString, parseOptions,
                     Path.GetFullPath(compilerFile.Name), encoding, cancellationToken);
@@ -262,19 +266,29 @@ public class CompilationService : ICompilationService
             if (diagnostic.Location.SourceTree != null)
             {
                 SyntaxTree tree = diagnostic.Location.SourceTree;
-                LocationKind kind = diagnostic.Location.Kind;
-                string? fileName = tree.FilePath ?? "UnknownFile.cs";
+                string fileName = Path.GetFileNameWithoutExtension(tree.FilePath) ?? "UnknownFile";
                 FileLinePositionSpan span = diagnostic.Location.GetLineSpan();
                 int line = span.StartLinePosition.Line + 1;
                 int charPos = span.StartLinePosition.Character + 1;
 
                 if (compilation.SyntaxTrees.Contains(tree) && diagnostic.Severity == DiagnosticSeverity.Error)
                 {
-                    _logger.LogError("Failed to compile {tree} - {message} (L: {line} | P: {pos}) | Removing from project",
-                        fileName, diagnostic.GetMessage(), line, charPos);
-
                     compilation = compilation.RemoveSyntaxTrees(tree);
-                    compilerMessage.ExtraData += $"[{diagnostic.Id}][{fileName}] {diagnostic.GetMessage()} | Line: {line}, Pos: {charPos} {Environment.NewLine}";
+
+                    string diagnosticMessage = diagnostic.GetMessage();
+
+                    _logger.LogError("Failed to compile {0} - {1} (L: {2} | P: {3}) | Removing from project",
+                        fileName, diagnosticMessage, line, charPos);
+
+                    compilerMessage.Errors ??= new List<CompilerError>();
+                    compilerMessage.Errors.Add(new CompilerError
+                    {
+                        Message = diagnosticMessage,
+                        File = fileName,
+                        Line = line,
+                        Position = charPos
+                    });
+
                     modified = true;
                     compilationResult.Failed++;
                 }
