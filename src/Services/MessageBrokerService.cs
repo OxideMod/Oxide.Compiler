@@ -39,28 +39,26 @@ public class MessageBrokerService
     {
         while (_pipeClient.IsConnected)
         {
-            bool processed = false;
-
-            if (OnMessageReceived != null)
-            {
-                try
-                {
-                    CompilerMessage? compilerMessage = await ReadMessageAsync(cancellationToken);
-                    if (compilerMessage != null)
-                    {
-                        OnMessageReceived(compilerMessage);
-                        processed = true;
-                    }
-                }
-                catch (Exception exception)
-                {
-                    _logger.LogError($"Error reading message: {exception}");
-                }
-            }
-
-            if (!processed)
+            if (OnMessageReceived == null)
             {
                 await Task.Delay(1000, cancellationToken);
+                continue;
+            }
+
+            try
+            {
+                CompilerMessage? compilerMessage = await ReadMessageAsync(cancellationToken);
+                if (compilerMessage == null)
+                {
+                    _logger.LogError("Received null message from server, skipping");
+                    continue;
+                }
+
+                OnMessageReceived(compilerMessage);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError($"Error reading message: {exception}");
             }
         }
     }
