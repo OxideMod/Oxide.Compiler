@@ -1,19 +1,11 @@
 ﻿using Microsoft.CodeAnalysis.Emit;
-using Microsoft.Extensions.Logging;
 using Serilog.Core;
-using Serilog.Events;
 
 namespace Oxide.CompilerServices.Common;
 
 public static class Constants
 {
-    public static readonly EventId StartupEventId = new(1, "Startup");
-    public static readonly EventId ShutdownEventId = new(2, "Shutdown");
-
-    public static readonly EventId CommandEventId = new(3, "Command");
-    public static readonly EventId CompileEventId = new(4, "Compile");
-
-    public static readonly EmitOptions PdbEmitOptions = new(debugInformationFormat: DebugInformationFormat.PortablePdb);
+    public static readonly EmitOptions CompilationEmitOptions = new(debugInformationFormat: DebugInformationFormat.PortablePdb);
 
     public static readonly Dictionary<string, string> SwitchMappings = new(StringComparer.InvariantCultureIgnoreCase)
     {

@@ -20,7 +20,6 @@ public static class DependencyInjection
             service.ServicesStopConcurrently = true;
         });
 
-
         configuration.AddCommandLine(args, Constants.SwitchMappings);
         configuration.AddJsonFile(Path.Combine(Constants.RootPath, "oxide.compiler.json"), true);
         configuration.AddEnvironmentVariables("Oxide_");
@@ -35,7 +34,6 @@ public static class DependencyInjection
         services.Configure<CompilerConfiguration>(configuration.GetSection("Compiler"));
         services.Configure<DirectoryConfiguration>(configuration.GetSection("Path"));
         services.Configure<LoggingConfiguration>(configuration.GetSection("Logging"));
-
 
         services.AddLogging(loggingBuilder =>
         {

@@ -75,7 +75,7 @@ public class OxideResolver : MetadataReferenceResolver
             return reference;
         }
 
-        _logger.LogError(Constants.CompileEventId, "Unable to find required dependency {name}", name);
+        _logger.LogError("Unable to find required dependency {0}", name);
         return null;
     }
 }

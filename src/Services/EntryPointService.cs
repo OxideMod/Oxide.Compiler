@@ -37,8 +37,8 @@ public class EntryPointService : IEntryPointService
 
     public async ValueTask StartAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation(Constants.StartupEventId, $"Starting compiler v{Assembly.GetExecutingAssembly().GetName().Version}. . .");
-        _logger.LogInformation(Constants.StartupEventId, $"Minimal logging level is set to {Constants.ApplicationLogLevel.MinimumLevel}");
+        _logger.LogInformation($"Starting compiler v{Assembly.GetExecutingAssembly().GetName().Version}. . .");
+        _logger.LogInformation($"Minimal logging level is set to {Constants.ApplicationLogLevel.MinimumLevel}");
 
         Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
         Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
@@ -49,7 +49,7 @@ public class EntryPointService : IEntryPointService
         Process? parentProcess = _appConfiguration.GetParentProcess();
         if (parentProcess == null)
         {
-            _logger.LogWarning(Constants.StartupEventId, "Parent process is not defined, compiler may stay open if parent is improperly shutdown");
+            _logger.LogWarning("Parent process is not defined, compiler may stay open if parent is improperly shutdown");
             return;
         }
 
@@ -60,7 +60,7 @@ public class EntryPointService : IEntryPointService
                 parentProcess.EnableRaisingEvents = true;
                 parentProcess.Exited += (_, _) => RequestShutdown("parent process shutdown");
 
-                _logger.LogInformation(Constants.StartupEventId, "Watching parent process ([{0}] {1}) for shutdown",
+                _logger.LogInformation("Watching parent process ([{0}] {1}) for shutdown",
                     parentProcess.Id, parentProcess.ProcessName);
             }
             else
@@ -71,18 +71,18 @@ public class EntryPointService : IEntryPointService
         }
         catch (Exception exception)
         {
-            _logger.LogError(Constants.StartupEventId, exception,
+            _logger.LogError(exception,
                 "Failed to attach to parent process, compiler may stay open if parent is improperly shutdown");
         }
 
         if (!_appConfiguration.GetCompilerConfiguration().EnableMessageStream)
         {
-            _logger.LogWarning(Constants.StartupEventId, "Message stream is disabled, compiler will not receive compile jobs");
+            _logger.LogWarning("Message stream is disabled, compiler will not receive compile jobs");
             return;
         }
 
         await _messageBrokerService.StartAsync(cancellationToken);
-        _messageBrokerService.OnMessageReceived += compilerMessage => OnMessageReceivedAsync(compilerMessage, cancellationToken);
+        _messageBrokerService.OnMessageReceived += compilerMessage => _ = OnMessageReceivedAsync(compilerMessage, cancellationToken);
 
         await Task.Delay(2000, cancellationToken);
 
@@ -102,12 +102,11 @@ public class EntryPointService : IEntryPointService
 
                     if (compilerData == null)
                     {
-                        _logger.LogError(Constants.CompileEventId, $"Received invalid compiler data for job {compilerMessage.Id}");
+                        _logger.LogError($"Received invalid compiler data for job {compilerMessage.Id}");
                         return;
                     }
 
-                    _logger.LogDebug(Constants.CompileEventId,
-                        $"Received compile job {compilerMessage.Id} | Plugins: {compilerData.SourceFiles.Length}, References: {compilerData.ReferenceFiles.Length}");
+                    _logger.LogDebug($"Received compile job {compilerMessage.Id} | Plugins: {compilerData.SourceFiles.Length}, References: {compilerData.ReferenceFiles.Length}");
 
                     CompilerMessage compilationMessage =
                         await _compilationService.GetCompilationAsync(compilerMessage.Id, compilerData,
@@ -115,12 +114,11 @@ public class EntryPointService : IEntryPointService
 
                     await _messageBrokerService.SendMessageAsync(compilationMessage, cancellationToken);
 
-                    _logger.LogInformation(Constants.CompileEventId, $"Completed compile job {compilerMessage.Id}");
+                    _logger.LogInformation($"Completed compile job {compilerMessage.Id}");
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogError(Constants.CompileEventId,
-                        $"Error occurred while compiling job {compilerMessage.Id}: {exception}");
+                    _logger.LogError($"Error occurred while compiling job {compilerMessage.Id}: {exception}");
                 }
                 break;
             }
@@ -169,7 +167,7 @@ public class EntryPointService : IEntryPointService
 
             stringBuilder.AppendFormat(Constants.ShutdownMessageFormat, source);
 
-            _logger.LogInformation(Constants.ShutdownEventId, stringBuilder.ToString());
+            _logger.LogInformation(stringBuilder.ToString());
         }
 
         _appLifetime.StopApplication();
