@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
@@ -23,10 +22,10 @@ public class CompilationService : ICompilationService
     private readonly MessageBrokerService _messageBrokerService;
     private readonly MetadataReferenceResolver _metadataReferenceResolver;
 
-    private readonly ImmutableArray<string> _ignoredCodes = ImmutableArray.Create(new[]
-    {
+    private readonly ImmutableArray<string> _ignoredCodes =
+    [
         "CS1701"
-    });
+    ];
 
     public CompilationService(ILogger<CompilationService> logger, AppConfiguration appConfiguration,
         MessageBrokerService messageBrokerService, MetadataReferenceResolver metadataReferenceResolver)
@@ -40,7 +39,7 @@ public class CompilationService : ICompilationService
     public async ValueTask<CompilerMessage> GetCompilationAsync(int id, CompilerData compilerData, CancellationToken cancellationToken)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        _logger.LogInformation(Constants.CompileEventId, $"Starting compilation of job id {id} | Total Plugins: {compilerData.SourceFiles.Length}");
+        _logger.LogInformation($"Starting compilation of job id {id} | Total Plugins: {compilerData.SourceFiles.Length}");
         string details =
             $"Settings[Encoding: {compilerData.Encoding}, CSVersion: {compilerData.GetLanguageVersion()}, Target: {compilerData.OutputKind()}, Platform: {compilerData.Platform()}, StdLib: {compilerData.StdLib}, Debug: {compilerData.Debug}, Preprocessor: {string.Join(", ", compilerData.Preprocessor)}]";
 
@@ -78,7 +77,7 @@ public class CompilationService : ICompilationService
             }
         }
 
-        _logger.LogDebug(Constants.CompileEventId, details);
+        _logger.LogDebug(details);
 
         try
         {
@@ -93,20 +92,20 @@ public class CompilationService : ICompilationService
 
             if (compilationResult.Data.Length > 0)
             {
-                _logger.LogInformation(Constants.CompileEventId, $"Successfully compiled {compilationResult.Success}/{compilerData.SourceFiles.Length} plugins for job {id} in {stopwatch.ElapsedMilliseconds}ms");
+                _logger.LogInformation($"Successfully compiled {compilationResult.Success}/{compilerData.SourceFiles.Length} plugins for job {id} in {stopwatch.ElapsedMilliseconds}ms");
             }
             else
             {
-                _logger.LogError(Constants.CompileEventId, $"Failed to compile job {id} in {stopwatch.ElapsedMilliseconds}ms");
+                _logger.LogError($"Failed to compile job {id} in {stopwatch.ElapsedMilliseconds}ms");
             }
 
-            _logger.LogDebug(Constants.CompileEventId, $"Pushing job {id} back to parent");
+            _logger.LogDebug($"Pushing job {id} back to parent");
 
             return message;
         }
         catch (Exception exception)
         {
-            _logger.LogError(Constants.CompileEventId, exception, $"Error while compiling job {id} - {exception.Message}");
+            _logger.LogError(exception, $"Error while compiling job {id}");
             await _messageBrokerService.SendMessageAsync(new CompilerMessage
             {
                 Id = id,
@@ -166,14 +165,13 @@ public class CompilationService : ICompilationService
                         }
                         default:
                         {
-                            _logger.LogWarning(Constants.CompileEventId,
-                                $"Ignoring unhandled project reference: {fileName}");
+                            _logger.LogWarning($"Ignoring unhandled project reference: {fileName}");
                             continue;
                         }
                     }
                 }
 
-                _logger.LogDebug(Constants.CompileEventId, $"Added {references.Count} project references");
+                _logger.LogDebug($"Added {references.Count} project references");
             }
 
             Dictionary<CompilerFile, SyntaxTree> syntaxTrees = new();
@@ -183,7 +181,9 @@ public class CompilationService : ICompilationService
 
             foreach (CompilerFile compilerFile in compilerData.SourceFiles)
             {
-                string fileName = Path.GetFileName(compilerFile.Name);
+                string sourceString = encoding.GetString(compilerFile.Data);
+
+                /*string fileName = Path.GetFileName(compilerFile.Name);
                 bool isUnicode = false;
 
                 string sourceString = RegexExtensions.UnicodeEscapePattern.Replace(
@@ -197,7 +197,7 @@ public class CompilationService : ICompilationService
                 {
                     _logger.LogDebug(Constants.CompileEventId,
                         $"Plugin {fileName} is using unicode escape sequence");
-                }
+                }*/
 
                 SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(sourceString, parseOptions,
                     Path.GetFullPath(compilerFile.Name), encoding, cancellationToken);
@@ -205,7 +205,7 @@ public class CompilationService : ICompilationService
                 syntaxTrees.Add(compilerFile, syntaxTree);
             }
 
-            _logger.LogDebug(Constants.CompileEventId, $"Added {syntaxTrees.Count} plugins to the project");
+            _logger.LogDebug($"Added {syntaxTrees.Count} plugins to the project");
 
             CSharpCompilationOptions compilationOptions = new(compilerData.OutputKind(), metadataReferenceResolver: resolver,
                 platform: compilerData.Platform(),
@@ -239,7 +239,7 @@ public class CompilationService : ICompilationService
         using MemoryStream peStream = new();
         using MemoryStream pdbStream = new();
 
-        EmitResult result = compilation.Emit(peStream, pdbStream, options: Constants.PdbEmitOptions,
+        EmitResult result = compilation.Emit(peStream, pdbStream, options: Constants.CompilationEmitOptions,
             cancellationToken: cancellationToken);
 
         if (result.Success)
@@ -270,18 +270,18 @@ public class CompilationService : ICompilationService
 
                 if (compilation.SyntaxTrees.Contains(tree) && diagnostic.Severity == DiagnosticSeverity.Error)
                 {
-                    _logger.LogError(Constants.CompileEventId, "Failed to compile {tree} - {message} (L: {line} | P: {pos}) | Removing from project",
+                    _logger.LogError("Failed to compile {tree} - {message} (L: {line} | P: {pos}) | Removing from project",
                         fileName, diagnostic.GetMessage(), line, charPos);
 
                     compilation = compilation.RemoveSyntaxTrees(tree);
-                    compilerMessage.ExtraData += $"[Error][{diagnostic.Id}][{fileName}] {diagnostic.GetMessage()} | Line: {line}, Pos: {charPos} {Environment.NewLine}";
+                    compilerMessage.ExtraData += $"[{diagnostic.Id}][{fileName}] {diagnostic.GetMessage()} | Line: {line}, Pos: {charPos} {Environment.NewLine}";
                     modified = true;
                     compilationResult.Failed++;
                 }
             }
             else
             {
-                _logger.LogError(Constants.CompileEventId, $"[Error][{diagnostic.Id}] {diagnostic.GetMessage()}");
+                _logger.LogError($"[{diagnostic.Id}] {diagnostic.GetMessage()}");
             }
         }
 
