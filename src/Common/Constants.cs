@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis.Emit;
 using Microsoft.Extensions.Logging;
 using Serilog.Core;
+using Serilog.Events;
 
 namespace Oxide.CompilerServices.Common;
 
