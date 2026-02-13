@@ -142,15 +142,17 @@ public class CompilationService : ICompilationService
             Dictionary<string, MetadataReference> references = new(StringComparer.OrdinalIgnoreCase);
 
             OxideResolver resolver = (OxideResolver)_metadataReferenceResolver;
+
             if (compilerData.StdLib)
             {
-                references.Add("System.Private.CoreLib.dll", resolver.Reference("System.Private.CoreLib.dll")!);
-                references.Add("netstandard.dll", resolver.Reference("netstandard.dll")!);
-                references.Add("System.Runtime.dll", resolver.Reference("System.Runtime.dll")!);
-                references.Add("System.Collections.dll", resolver.Reference("System.Collections.dll")!);
-                references.Add("System.Collections.Immutable.dll", resolver.Reference("System.Collections.Immutable.dll")!);
-                references.Add("System.Linq.dll", resolver.Reference("System.Linq.dll")!);
-                references.Add("System.Data.Common.dll", resolver.Reference("System.Data.Common.dll")!);
+                references.Add("System.Private.CoreLib.dll", resolver.AddReference("System.Private.CoreLib.dll")!);
+                references.Add("netstandard.dll", resolver.AddReference("netstandard.dll")!);
+                references.Add("System.Runtime.dll", resolver.AddReference("System.Runtime.dll")!);
+                references.Add("System.Collections.dll", resolver.AddReference("System.Collections.dll")!);
+                references.Add("System.Collections.Immutable.dll", resolver.AddReference("System.Collections.Immutable.dll")!);
+                references.Add("System.Linq.dll", resolver.AddReference("System.Linq.dll")!);
+                references.Add("System.Data.Common.dll", resolver.AddReference("System.Data.Common.dll")!);
+
             }
 
             if (compilerData.ReferenceFiles is { Length: > 0 })
@@ -168,6 +170,7 @@ public class CompilationService : ICompilationService
                                 referenceFile.Data.Length == 0)
                                 ? MetadataReference.CreateFromFile(referenceFile.Name)
                                 : MetadataReference.CreateFromImage(referenceFile.Data, filePath: referenceFile.Name);
+
                             continue;
                         }
                         default:
@@ -211,11 +214,10 @@ public class CompilationService : ICompilationService
 
             _logger.LogDebug($"Added {syntaxTrees.Count} plugins to the project");
 
-            CSharpCompilationOptions compilationOptions = new(compilerData.OutputKind(), metadataReferenceResolver: resolver,
-                platform: compilerData.Platform(),
-                allowUnsafe: true,
-                deterministic: true,
-                optimizationLevel: OptimizationLevel.Debug);
+            CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(compilerData.OutputKind(),
+                metadataReferenceResolver: resolver, platform: compilerData.Platform(), allowUnsafe: true,
+                deterministic: true, optimizationLevel: OptimizationLevel.Debug)
+                .WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
 
             string assemblyName = Path.GetRandomFileName();
             CSharpCompilation compilation = CSharpCompilation.Create(assemblyName, syntaxTrees.Values,
@@ -295,7 +297,14 @@ public class CompilationService : ICompilationService
             }
             else
             {
-                _logger.LogError($"[{diagnostic.Id}] {diagnostic.GetMessage()}");
+                string diagnosticMessage = diagnostic.GetMessage();
+                compilerMessage.Errors ??= new List<CompilerError>();
+                compilerMessage.Errors.Add(new CompilerError
+                {
+                    Message = diagnosticMessage,
+                });
+
+                _logger.LogError($"[{diagnostic.Id}] {diagnosticMessage}");
             }
         }
 
