@@ -265,31 +265,46 @@ public class CompilationService : ICompilationService
                 continue;
             }
 
+            string diagnosticMessage = diagnostic.GetMessage();
+
+            _logger.LogDebug("[{0}] [{1}] Diagnostic - {2}", diagnostic.Id, diagnostic.Severity, diagnosticMessage);
+
             if (diagnostic.Location.SourceTree != null)
             {
-                SyntaxTree tree = diagnostic.Location.SourceTree;
-                string fileName = Path.GetFileNameWithoutExtension(tree.FilePath) ?? "UnknownFile";
-                FileLinePositionSpan span = diagnostic.Location.GetLineSpan();
-                int line = span.StartLinePosition.Line + 1;
-                int charPos = span.StartLinePosition.Character + 1;
+                SyntaxTree syntaxTree = diagnostic.Location.SourceTree;
+                string fileName = Path.GetFileNameWithoutExtension(syntaxTree.FilePath) ?? "UnknownFile";
+                FileLinePositionSpan lineSpan = diagnostic.Location.GetLineSpan();
+                int line = lineSpan.StartLinePosition.Line + 1;
+                int position = lineSpan.StartLinePosition.Character + 1;
 
-                if (compilation.SyntaxTrees.Contains(tree) && diagnostic.Severity == DiagnosticSeverity.Error)
+                switch (diagnostic.Severity)
                 {
-                    compilation = compilation.RemoveSyntaxTrees(tree);
+                    case DiagnosticSeverity.Warning:
+                    {
 
-                    string diagnosticMessage = diagnostic.GetMessage();
+                        break;
+                    }
+                    case DiagnosticSeverity.Error:
+                    {
+                        compilerMessage.Errors ??= new List<CompilerError>();
+                        compilerMessage.Errors.Add(new CompilerError
+                        {
+                            Message = diagnosticMessage,
+                            File = fileName,
+                            Line = line,
+                            Position = position
+                        });
+
+                        break;
+                    }
+                }
+
+                if (compilation.SyntaxTrees.Contains(syntaxTree) && diagnostic.Severity == DiagnosticSeverity.Error)
+                {
+                    compilation = compilation.RemoveSyntaxTrees(syntaxTree);
 
                     _logger.LogError("Failed to compile {0} - {1} (L: {2} | P: {3}) | Removing from project",
-                        fileName, diagnosticMessage, line, charPos);
-
-                    compilerMessage.Errors ??= new List<CompilerError>();
-                    compilerMessage.Errors.Add(new CompilerError
-                    {
-                        Message = diagnosticMessage,
-                        File = fileName,
-                        Line = line,
-                        Position = charPos
-                    });
+                        fileName, diagnosticMessage, line, position);
 
                     modified = true;
                     compilationResult.Failed++;
@@ -297,7 +312,6 @@ public class CompilationService : ICompilationService
             }
             else
             {
-                string diagnosticMessage = diagnostic.GetMessage();
                 compilerMessage.Errors ??= new List<CompilerError>();
                 compilerMessage.Errors.Add(new CompilerError
                 {
