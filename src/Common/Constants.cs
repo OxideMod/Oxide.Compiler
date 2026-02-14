@@ -1,5 +1,8 @@
 ﻿using Microsoft.CodeAnalysis.Emit;
 using Serilog.Core;
+#if DEBUG
+using Serilog.Events;
+#endif
 
 namespace Oxide.CompilerServices.Common;
 
