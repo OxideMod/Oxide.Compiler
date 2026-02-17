@@ -12,11 +12,8 @@ public class MessageBrokerService
 {
     private readonly ILogger<MessageBrokerService> _logger;
     private readonly AppConfiguration _appConfiguration;
-
     private NamedPipeClientStream _pipeClient;
-
     private int _messageId;
-
     public event Action<CompilerMessage> OnMessageReceived;
 
     public MessageBrokerService(ILogger<MessageBrokerService> logger, AppConfiguration appConfiguration)
@@ -87,9 +84,9 @@ public class MessageBrokerService
 
             await _pipeClient.WriteAsync(payload, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Error sending message to server");
+            _logger.LogError($"Error sending message to server: {exception}");
         }
     }
 
@@ -124,9 +121,9 @@ public class MessageBrokerService
                 ArrayPool<byte>.Shared.Return(messageBuffer);
             }
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Error reading message from named pipe");
+            _logger.LogError($"Error reading message from named pipe: {exception}");
             return null;
         }
         finally

@@ -81,11 +81,8 @@ public class EntryPointService : IEntryPointService
             return;
         }
 
-        await _messageBrokerService.StartAsync(cancellationToken);
         _messageBrokerService.OnMessageReceived += compilerMessage => _ = OnMessageReceivedAsync(compilerMessage, cancellationToken);
-
-        await Task.Delay(2000, cancellationToken);
-
+        await _messageBrokerService.StartAsync(cancellationToken);
         await _messageBrokerService.SendReadyMessageAsync(cancellationToken);
     }
 
@@ -95,6 +92,7 @@ public class EntryPointService : IEntryPointService
         {
             case MessageType.Data:
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
                 try
                 {
                     CompilerData? compilerData = JsonSerializer.Deserialize<CompilerData>(compilerMessage.Data,
@@ -120,16 +118,19 @@ public class EntryPointService : IEntryPointService
                 {
                     _logger.LogError($"Error occurred while compiling job {compilerMessage.Id}: {exception}");
                 }
-                break;
-            }
-            case MessageType.Heartbeat:
-            {
-                _logger.LogInformation("Received heartbeat from server");
+
+                stopwatch.Stop();
+
+                _logger.LogDebug($"Total time for job {compilerMessage.Id}: {stopwatch.ElapsedMilliseconds}ms [{stopwatch.ElapsedTicks} ticks]");
                 break;
             }
             case MessageType.Shutdown:
             {
                 RequestShutdown("Server");
+                break;
+            }
+            case MessageType.Heartbeat:
+            {
                 break;
             }
             case MessageType.Unknown:

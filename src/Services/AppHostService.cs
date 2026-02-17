@@ -15,13 +15,7 @@ public class AppHostService : IHostedService
         _entryPointService = entryPointService;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        await _entryPointService.StartAsync(cancellationToken);
-    }
+    public async Task StartAsync(CancellationToken cancellationToken) => await _entryPointService.StartAsync(cancellationToken);
 
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        await _entryPointService.StopAsync(cancellationToken);
-    }
+    public async Task StopAsync(CancellationToken cancellationToken) => await _entryPointService.StopAsync(cancellationToken);
 }
