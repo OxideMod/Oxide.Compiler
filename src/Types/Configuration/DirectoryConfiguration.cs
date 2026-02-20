@@ -1,4 +1,4 @@
-﻿namespace Oxide.CompilerServices.Types.Configuration;
+namespace Oxide.CompilerServices.Types.Configuration;
 
 public class DirectoryConfiguration
 {

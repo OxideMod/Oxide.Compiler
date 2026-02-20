@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.IO.Pipes;
 using System.Text.Json;
@@ -113,7 +113,7 @@ public class MessageBrokerService
             {
                 await _pipeClient.ReadExactlyAsync(messageBuffer.AsMemory(0, messageLength), cancellationToken);
 
-                return  JsonSerializer.Deserialize<CompilerMessage>(messageBuffer.AsSpan(0, messageLength),
+                return JsonSerializer.Deserialize<CompilerMessage>(messageBuffer.AsSpan(0, messageLength),
                     CompilerMessageContext.Default.CompilerMessage);
             }
             finally

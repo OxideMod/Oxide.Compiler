@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Emit;
 using Serilog.Core;
 #if DEBUG
 using Serilog.Events;

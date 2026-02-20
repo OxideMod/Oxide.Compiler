@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Oxide.CompilerServices.Common;
 
 namespace Oxide.CompilerServices.Types.Configuration;

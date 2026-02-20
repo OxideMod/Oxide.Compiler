@@ -1,4 +1,4 @@
-﻿
+
 namespace Oxide.CompilerServices.Types.Compilation;
 
 public class CompilerData
