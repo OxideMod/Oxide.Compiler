@@ -166,10 +166,18 @@ public class CompilationService : ICompilationService
                         case ".exe":
                         case ".dll":
                         {
+                            MetadataReferenceProperties properties = default;
+
+                            // Alias Oxide.References so its merged types don't conflict with game/runtime types
+                            if (fileName.Equals("Oxide.References.dll", StringComparison.OrdinalIgnoreCase))
+                            {
+                                properties = new MetadataReferenceProperties(aliases: ImmutableArray.Create("References"));
+                            }
+
                             references[fileName] = File.Exists(referenceFile.Name) && (referenceFile.Data == null ||
                                 referenceFile.Data.Length == 0)
-                                ? MetadataReference.CreateFromFile(referenceFile.Name)
-                                : MetadataReference.CreateFromImage(referenceFile.Data, filePath: referenceFile.Name);
+                                ? MetadataReference.CreateFromFile(referenceFile.Name, properties)
+                                : MetadataReference.CreateFromImage(referenceFile.Data, properties, filePath: referenceFile.Name);
 
                             continue;
                         }
