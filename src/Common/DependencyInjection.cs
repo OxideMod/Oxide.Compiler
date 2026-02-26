@@ -65,7 +65,7 @@ public static class DependencyInjection
         services.AddSingleton<IConfigurationRoot>(configuration);
         services.AddSingleton<AppConfiguration>();
         services.AddSingleton<ICompilationService, CompilationService>();
-        services.AddTransient<MetadataReferenceResolver, OxideResolver>();
+        services.AddSingleton<MetadataReferenceResolver, OxideResolver>();
         services.AddSingleton<MessageBrokerService>();
         services.AddSingleton<IEntryPointService, EntryPointService>();
         services.AddHostedService<AppHostService>();

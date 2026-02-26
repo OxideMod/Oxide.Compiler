@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime;
 using System.Text;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
@@ -21,7 +22,7 @@ public class CompilationService : ICompilationService
     private readonly ILogger _logger;
     private readonly AppConfiguration _appConfiguration;
     private readonly MessageBrokerService _messageBrokerService;
-    private readonly MetadataReferenceResolver _metadataReferenceResolver;
+    private readonly OxideResolver _oxideResolver;
 
     private readonly ImmutableArray<string> _ignoredCodes =
     [
@@ -34,7 +35,7 @@ public class CompilationService : ICompilationService
         _logger = logger;
         _appConfiguration = appConfiguration;
         _messageBrokerService = messageBrokerService;
-        _metadataReferenceResolver = metadataReferenceResolver;
+        _oxideResolver = (OxideResolver)metadataReferenceResolver;
     }
 
     public async ValueTask<CompilerMessage> GetCompilationAsync(int id, CompilerData compilerData, CancellationToken cancellationToken)
@@ -89,7 +90,7 @@ public class CompilationService : ICompilationService
             };
 
             CompilationResult compilationResult = new();
-            CompilerMessage message = await CompileAsync(compilerData, compilerMessage, compilationResult, cancellationToken);
+            CompilerMessage message = Compile(compilerData, compilerMessage, compilationResult, cancellationToken);
 
             if (compilationResult.Data.Length > 0)
             {
@@ -124,7 +125,7 @@ public class CompilationService : ICompilationService
         }
     }
 
-    private async ValueTask<CompilerMessage> CompileAsync(CompilerData compilerData, CompilerMessage compilerMessage,
+    private CompilerMessage Compile(CompilerData compilerData, CompilerMessage compilerMessage,
         CompilationResult compilationResult, CancellationToken cancellationToken)
     {
         try
@@ -139,20 +140,16 @@ public class CompilationService : ICompilationService
                 throw new ArgumentException("No source files provided", nameof(compilerData.SourceFiles));
             }
 
-            Dictionary<string, MetadataReference> references = new(StringComparer.OrdinalIgnoreCase);
-
-            OxideResolver resolver = (OxideResolver)_metadataReferenceResolver;
-
+            HashSet<MetadataReference> references = new();
             if (compilerData.StdLib)
             {
-                references.Add("System.Private.CoreLib.dll", resolver.AddReference("System.Private.CoreLib.dll")!);
-                references.Add("netstandard.dll", resolver.AddReference("netstandard.dll")!);
-                references.Add("System.Runtime.dll", resolver.AddReference("System.Runtime.dll")!);
-                references.Add("System.Collections.dll", resolver.AddReference("System.Collections.dll")!);
-                references.Add("System.Collections.Immutable.dll", resolver.AddReference("System.Collections.Immutable.dll")!);
-                references.Add("System.Linq.dll", resolver.AddReference("System.Linq.dll")!);
-                references.Add("System.Data.Common.dll", resolver.AddReference("System.Data.Common.dll")!);
-
+                references.Add(_oxideResolver.GetOrAddReference("System.Private.CoreLib.dll")!);
+                references.Add(_oxideResolver.GetOrAddReference("netstandard.dll")!);
+                references.Add(_oxideResolver.GetOrAddReference("System.Runtime.dll")!);
+                references.Add(_oxideResolver.GetOrAddReference("System.Collections.dll")!);
+                references.Add(_oxideResolver.GetOrAddReference("System.Collections.Immutable.dll")!);
+                references.Add(_oxideResolver.GetOrAddReference("System.Linq.dll")!);
+                references.Add(_oxideResolver.GetOrAddReference("System.Data.Common.dll")!);
             }
 
             if (compilerData.ReferenceFiles is { Length: > 0 })
@@ -166,36 +163,31 @@ public class CompilationService : ICompilationService
                         case ".exe":
                         case ".dll":
                         {
-                            MetadataReferenceProperties properties = default;
-
-                            // Alias Oxide.References so its merged types don't conflict with game/runtime types
-                            if (fileName.Equals("Oxide.References.dll", StringComparison.OrdinalIgnoreCase))
+                            PortableExecutableReference? reference = _oxideResolver.GetOrAddReference(referenceFile);
+                            if (reference == null)
                             {
-                                properties = new MetadataReferenceProperties(aliases: ImmutableArray.Create("References"));
+                                continue;
                             }
 
-                            references[fileName] = File.Exists(referenceFile.Name) && (referenceFile.Data == null ||
-                                referenceFile.Data.Length == 0)
-                                ? MetadataReference.CreateFromFile(referenceFile.Name, properties)
-                                : MetadataReference.CreateFromImage(referenceFile.Data, properties, filePath: referenceFile.Name);
-
+                            references.Add(reference);
                             continue;
                         }
                         default:
                         {
-                            _logger.LogWarning($"Ignoring unhandled project reference: {fileName}");
+                            _logger.LogWarning("Ignoring unhandled project reference: {0}", fileName);
                             continue;
                         }
                     }
                 }
 
-                _logger.LogDebug($"Added {references.Count} project references");
+                _logger.LogDebug("Added {0} project references", references.Count);
             }
 
             Dictionary<CompilerFile, SyntaxTree> syntaxTrees = new();
             Encoding encoding = Encoding.GetEncoding(compilerData.Encoding);
 
-            CSharpParseOptions parseOptions = new(compilerData.GetLanguageVersion(), preprocessorSymbols: compilerData.Preprocessor);
+            CSharpParseOptions parseOptions = new(compilerData.GetLanguageVersion(),
+                preprocessorSymbols: compilerData.Preprocessor);
 
             foreach (CompilerFile compilerFile in compilerData.SourceFiles)
             {
@@ -220,16 +212,16 @@ public class CompilationService : ICompilationService
                 syntaxTrees.Add(compilerFile, syntaxTree);
             }
 
-            _logger.LogDebug($"Added {syntaxTrees.Count} plugins to the project");
+            _logger.LogDebug("Added {0} plugins to the project", syntaxTrees.Count);
 
             CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(compilerData.OutputKind(),
-                metadataReferenceResolver: resolver, platform: compilerData.Platform(), allowUnsafe: true,
-                deterministic: true, optimizationLevel: OptimizationLevel.Debug)
+                    metadataReferenceResolver: _oxideResolver, platform: compilerData.Platform(), allowUnsafe: true,
+                    deterministic: true, optimizationLevel: OptimizationLevel.Debug)
                 .WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
 
             string assemblyName = Path.GetRandomFileName();
-            CSharpCompilation compilation = CSharpCompilation.Create(assemblyName, syntaxTrees.Values,
-                references.Values, compilationOptions);
+            CSharpCompilation compilation = CSharpCompilation.Create(assemblyName, syntaxTrees.Values, references,
+                compilationOptions);
 
             compilationResult.Name = compilation.AssemblyName;
 
@@ -244,6 +236,13 @@ public class CompilationService : ICompilationService
         {
             _logger.LogError("Error while compiling: {0}", exception);
             throw;
+        }
+        finally
+        {
+            _oxideResolver.Cleanup();
+
+            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
         }
     }
 

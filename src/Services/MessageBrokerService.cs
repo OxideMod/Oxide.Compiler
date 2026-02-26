@@ -60,10 +60,8 @@ public class MessageBrokerService
         }
     }
 
-    public async ValueTask SendMessageAsync(CompilerMessage message, CancellationToken cancellationToken)
-    {
+    public async ValueTask SendMessageAsync(CompilerMessage message, CancellationToken cancellationToken) =>
         await WriteMessageAsync(message, cancellationToken);
-    }
 
     private async ValueTask WriteMessageAsync(CompilerMessage message, CancellationToken cancellationToken)
     {
